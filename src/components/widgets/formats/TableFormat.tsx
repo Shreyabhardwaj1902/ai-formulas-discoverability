@@ -23,6 +23,8 @@ import {
   IconLink,
   IconFormula,
   IconInformationMarkCircle,
+  IconSparks,
+  IconSparksFilled,
 } from "@mirohq/design-system";
 
 // --- Types ---
@@ -128,12 +130,14 @@ function HeaderButton({ icon, onClick }: { icon: React.ReactNode; onClick?: () =
   );
 }
 
-function HeaderCell({ 
-  column, 
-  onResize 
-}: { 
-  column: Column; 
-  onResize: (newWidth: number) => void 
+function HeaderCell({
+  column,
+  onResize,
+  onFormulaClick,
+}: {
+  column: Column;
+  onResize: (newWidth: number) => void;
+  onFormulaClick?: (e: React.MouseEvent) => void;
 }) {
   const Icon = getIconForType(column.type);
   const [isResizing, setIsResizing] = useState(false);
@@ -169,7 +173,9 @@ function HeaderCell({
         "h-[44px] bg-[var(--background)] flex items-center px-2 gap-2 overflow-hidden border-r border-transparent hover:border-[var(--border)] group relative",
         column.isPrimary ? "pl-[44px]" : "justify-center"
       )}
-      style={{ width: column.width, minWidth: column.width }}
+      style={{ width: column.width, minWidth: column.width, cursor: column.formulaPhase === 'done' ? 'pointer' : undefined }}
+      onPointerDownCapture={column.formulaPhase === 'done' ? (e) => e.stopPropagation() : undefined}
+      onClick={column.formulaPhase === 'done' ? (e) => { e.stopPropagation(); onFormulaClick?.(e); } : undefined}
     >
       <div className="size-4 text-[var(--muted-foreground)] flex items-center justify-center shrink-0">
         <Icon />
@@ -209,10 +215,9 @@ function HeaderCell({
             cursor: 'pointer',
             flexShrink: 0,
           }}
+          className="gradient-sparkle"
         >
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-            <path d="M8.678 3.207c.325-1.368 2.319-1.37 2.644 0l.026.142.042.255c.49 2.625 2.599 4.662 5.26 5.046 1.554.224 1.562 2.473 0 2.698-2.747.394-4.906 2.552-5.302 5.3-.224 1.562-2.474 1.554-2.698 0-.396-2.747-2.554-4.906-5.302-5.3-1.559-.225-1.556-2.474 0-2.699l.256-.042c2.625-.49 4.662-2.599 5.046-5.26l.028-.14Z" fill="#7B61FF" />
-          </svg>
+          <IconSparksFilled size="small" />
         </span>
       )}
 
@@ -496,6 +501,18 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
       id={id}
       className="w-auto h-auto inline-block"
     >
+      {/* Hidden SVG gradient definition for sparkle icons */}
+      <svg width="0" height="0" style={{ position: "absolute", pointerEvents: "none" }}>
+        <defs>
+          <linearGradient id="ai-sparkle-gradient" x1="0%" y1="0%" x2="100%" y2="100%" gradientTransform="rotate(42)">
+            <stop offset="0%" stopColor="#322BFE" />
+            <stop offset="27%" stopColor="#6E3CFE" />
+            <stop offset="55%" stopColor="#A34CFF" />
+            <stop offset="82%" stopColor="#D05DFF" />
+            <stop offset="100%" stopColor="#F66EFF" />
+          </linearGradient>
+        </defs>
+      </svg>
       <div className="bg-[var(--background)] p-1 rounded-[var(--radius-lg)] border border-[var(--border)] inline-block select-none">
         {/* Toolbar */}
         <div className="flex gap-1 mb-2 px-1">
@@ -513,10 +530,18 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
           {/* Header Row */}
           <div className="flex gap-[1px]">
             {columns.map(col => (
-              <HeaderCell 
-                key={col.id} 
-                column={col} 
-                onResize={(newWidth) => handleColumnResize(col.id, newWidth)} 
+              <HeaderCell
+                key={col.id}
+                column={col}
+                onResize={(newWidth) => handleColumnResize(col.id, newWidth)}
+                onFormulaClick={col.formulaPhase === 'done' ? (e) => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setFormulaPopover({
+                    x: rect.left,
+                    y: rect.bottom + 4,
+                    colLabel: col.label,
+                  });
+                } : undefined}
               />
             ))}
             {/* Add Column Button */}
@@ -612,7 +637,9 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
                     ) : (
                       <div
                         className="w-full h-full flex items-center"
+                        onPointerDownCapture={col.formulaPhase === 'done' ? (e) => e.stopPropagation() : undefined}
                         onClick={col.formulaPhase === 'done' ? (e) => {
+                          e.stopPropagation();
                           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                           setFormulaPopover({
                             x: rect.left,
@@ -706,9 +733,9 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-                      <path d="M8.678 3.207c.325-1.368 2.319-1.37 2.644 0l.026.142.042.255c.49 2.625 2.599 4.662 5.26 5.046 1.554.224 1.562 2.473 0 2.698-2.747.394-4.906 2.552-5.302 5.3-.224 1.562-2.474 1.554-2.698 0-.396-2.747-2.554-4.906-5.302-5.3-1.559-.225-1.556-2.474 0-2.699l.256-.042c2.625-.49 4.662-2.599 5.046-5.26l.028-.14Z" fill="#7B61FF" />
-                    </svg>
+                    <span className="gradient-sparkle" style={{ display: 'inline-flex' }}>
+                      <IconSparks size="small" />
+                    </span>
                     <span style={{ fontSize: 11, color: '#7D8297', fontWeight: 500, fontFamily: 'var(--font-noto)' }}>AI generated</span>
                   </div>
                   <span

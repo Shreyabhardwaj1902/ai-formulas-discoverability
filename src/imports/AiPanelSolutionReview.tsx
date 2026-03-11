@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
+  Button,
   IconButton,
   IconSquarePencil,
   IconClockCounterClockwise,
@@ -10,6 +11,8 @@ import {
   IconPlus,
   IconArrowRight,
   IconSquareLineSquareDashed,
+  IconSparks,
+  IconSparksFilled,
 } from "@mirohq/design-system";
 
 /* ─── Escher-style AI avatar (gradient circle + sparkle icon) ─── */
@@ -39,6 +42,32 @@ function AgentAvatar({ size = 40 }: { size?: number }) {
         )}
       </svg>
     </div>
+  );
+}
+
+/* ─── Hidden SVG gradient definition (rendered once) ─── */
+function AiGradientDefs() {
+  return (
+    <svg width="0" height="0" style={{ position: "absolute", pointerEvents: "none" }}>
+      <defs>
+        <linearGradient id="ai-sparkle-gradient" x1="0%" y1="0%" x2="100%" y2="100%" gradientTransform="rotate(42)">
+          <stop offset="0%" stopColor="#322BFE" />
+          <stop offset="27%" stopColor="#6E3CFE" />
+          <stop offset="55%" stopColor="#A34CFF" />
+          <stop offset="82%" stopColor="#D05DFF" />
+          <stop offset="100%" stopColor="#F66EFF" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+/* ─── Gradient sparkle icon wrapper ─── */
+function GradientSparks({ filled, size = "small" }: { filled?: boolean; size?: "small" | "medium" | "large" }) {
+  return (
+    <span className="gradient-sparkle" style={{ display: "inline-flex", flexShrink: 0 }}>
+      {filled ? <IconSparksFilled size={size} /> : <IconSparks size={size} />}
+    </span>
   );
 }
 
@@ -110,6 +139,52 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
+/* ─── Typing indicator (three bouncing dots) ─── */
+function TypingIndicator() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <AgentAvatar size={28} />
+      <div style={{ display: "flex", alignItems: "center", gap: 4, paddingTop: 4 }}>
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#AEB2C0",
+              animation: `typingBounce 1.4s ease-in-out ${i * 0.16}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Streaming text reveal (word-by-word, like Claude/Gemini) ─── */
+function StreamingText({ text, speed = 20, onComplete }: { text: string; speed?: number; onComplete?: () => void }) {
+  const words = text.split(' ');
+  const [count, setCount] = useState(0);
+  const doneRef = useRef(false);
+  // Reveal 2-3 words at a time for natural pacing
+  const chunkSize = words.length > 30 ? 3 : 2;
+
+  useEffect(() => {
+    if (count >= words.length) {
+      if (!doneRef.current) {
+        doneRef.current = true;
+        onComplete?.();
+      }
+      return;
+    }
+    const t = setTimeout(() => setCount((c) => Math.min(c + chunkSize, words.length)), speed);
+    return () => clearTimeout(t);
+  }, [count, words.length, speed, chunkSize]);
+
+  return <>{words.slice(0, count).join(' ')}</>;
+}
+
 /* ─── Syntax-highlighted formula token ─── */
 const TOKEN_COLORS = {
   variable: "#6B21A8",   // purple — formula name (RICE_SCORE, PRIORITY)
@@ -158,9 +233,7 @@ function FormulaCard({ title, lines }: { title: string; lines: string[] }) {
   return (
     <div style={{ border: "1px solid #E0E2E8", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
       <div style={{ background: "#E8E0FF", display: "flex", alignItems: "center", gap: 8, padding: "12px 16px" }}>
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-          <path d="M8.678 3.207c.325-1.368 2.319-1.37 2.644 0l.026.142.042.255c.49 2.625 2.599 4.662 5.26 5.046 1.554.224 1.562 2.473 0 2.698-2.747.394-4.906 2.552-5.302 5.3-.224 1.562-2.474 1.554-2.698 0-.396-2.747-2.554-4.906-5.302-5.3-1.559-.225-1.556-2.474 0-2.699l.256-.042c2.625-.49 4.662-2.599 5.046-5.26l.028-.14Z" fill="#7B61FF" />
-        </svg>
+        <GradientSparks filled size="small" />
         <span style={{ fontSize: 15, fontWeight: 700, color: "#3B2D7B", fontFamily: "var(--font-roobert)", fontFeatureSettings: "'ss01'" }}>{title}</span>
       </div>
       <div style={{ padding: "16px 20px 20px" }}>
@@ -169,6 +242,79 @@ function FormulaCard({ title, lines }: { title: string; lines: string[] }) {
             {highlightFormula(line)}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Done state with expandable formula syntax ─── */
+function DoneWithFormula({ formula }: { formula: { cardTitle: string; cardLines: string[] } }) {
+  const [expanded, setExpanded] = useState(false);
+  const name = formula.cardTitle.replace("Formula - ", "");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeSlideIn 400ms ease-out both" }}>
+      {/* Success row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="12" fill="#059669" />
+          <path d="M7 12.5l3 3 7-7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#059669", lineHeight: 1.6 }}>
+          Done — {name} column added to your table.
+        </span>
+      </div>
+
+      {/* Clickable formula peek */}
+      <div
+        onClick={() => setExpanded((v) => !v)}
+        style={{
+          border: "1px solid #E0E2E8",
+          borderRadius: 8,
+          overflow: "hidden",
+          cursor: "pointer",
+          transition: "box-shadow 150ms ease",
+          boxShadow: expanded ? "0 2px 8px rgba(34,36,40,0.10)" : "none",
+        }}
+      >
+        {/* Header bar */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "8px 12px", background: expanded ? "#F9FAFB" : "#fff",
+          transition: "background 150ms ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "#6B21A8", fontFamily: "'Courier New', monospace" }}>Σ</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#222428" }}>{name}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "linear-gradient(135deg, #EDE9FE, #F3E8FF)", borderRadius: 4, padding: "2px 6px" }}>
+              <GradientSparks size="small" />
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#7C3AED" }}>AI generated</span>
+            </div>
+            <svg
+              width="16" height="16" viewBox="0 0 16 16" fill="none"
+              style={{ transition: "transform 200ms ease", transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+            >
+              <path d="M4 6l4 4 4-4" stroke="#6f7489" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Expandable syntax body */}
+        {expanded && (
+          <div style={{ padding: "10px 16px 14px", borderTop: "1px solid #E0E2E8", background: "#FAFAFE" }}>
+            {formula.cardLines.map((line, i) => (
+              <div key={i} style={{
+                fontSize: 13, fontWeight: 500, lineHeight: 1.8,
+                fontFamily: "'Courier New', monospace", whiteSpace: "pre-wrap",
+                wordBreak: "break-word", letterSpacing: 0.3,
+              }}>
+                {highlightFormula(line)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -417,8 +563,8 @@ const STAGE2: Record<string, {
   },
 };
 
-/* ─── Main content area ─── */
-function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text: string }[] }) {
+/* ─── Main content area (owns chat state + stage flow) ─── */
+function PanelBody() {
   // Detect if there's an applied formula from a previous session
   const [isWelcomeBack] = useState(() => ((window as any).__appliedFormulas?.length ?? 0) > 0);
   // stage: "welcome_back" | "intent" → "approach" → "formula" → can loop back via "try different"
@@ -437,15 +583,195 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
   const [welcomeBackChoice, setWelcomeBackChoice] = useState<string | null>(null);
   const [returnEdit, setReturnEdit] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const streamedSet = useRef(new Set<number>());
+  const [, forceUpdate] = useState(0);
+  // Progressive reveal: "analyzing" → intro → card → explanation → outcomes
+  const [formulaRevealStep, setFormulaRevealStep] = useState<0 | 1 | 2 | 3 | 4>(0);
 
-  // Auto-scroll to bottom when stage changes or new chat messages
+  // Chat state (owned here so handlers can trigger stage flow)
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  // Track the last AI chat reply so "yes/no" follow-ups have context
+  const lastAiReplyRef = useRef<string>("");
+
+  // Auto-scroll to bottom when stage changes or new chat messages or reveal progresses
   useEffect(() => {
     if (scrollRef.current) {
       setTimeout(() => {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
       }, 50);
     }
-  }, [stage, pastFormulas.length, chatMessages.length]);
+  }, [stage, pastFormulas.length, chatMessages.length, formulaRevealStep]);
+
+  // Scroll when typing indicator appears
+  useEffect(() => {
+    if (isTyping && scrollRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
+    }
+  }, [isTyping]);
+
+  // Current formula data
+  const formula = intentChoice && approachChoice ? FORMULAS[intentChoice]?.[approachChoice] : null;
+
+  // Progressive reveal when formula stage is entered
+  useEffect(() => {
+    if (stage !== "formula" || !formula) { setFormulaRevealStep(0); return; }
+    // If returning to edit, skip the animation
+    if (returnEdit) { setFormulaRevealStep(4); return; }
+    // Step 0 → 1 (analyzing → intro text): 1.5s
+    const t1 = setTimeout(() => setFormulaRevealStep(1), 1500);
+    // Step 1 → 2 (show formula card): 2.5s
+    const t2 = setTimeout(() => setFormulaRevealStep(2), 2500);
+    // Step 2 → 3 (show explanation): 3.5s
+    const t3 = setTimeout(() => setFormulaRevealStep(3), 3500);
+    // Step 3 → 4 (show outcomes/actions): 4.5s
+    const t4 = setTimeout(() => setFormulaRevealStep(4), 4500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [stage, formula, returnEdit]);
+
+  // Build context for the reply function (always current, no ref delay)
+  const chatContext: ChatContext = {
+    intentKey: intentChoice,
+    approachKey: approachChoice,
+    formulaTitle: formula?.cardTitle?.replace("Formula - ", "") ?? null,
+    formulaBullets: formula?.bullets ?? null,
+    formulaLines: formula?.cardLines ?? null,
+    hasInsightsNudge: !!formula?.insightsNudge,
+    insightsNudgeText: formula?.insightsNudge ?? null,
+    closingText: formula?.closing ?? null,
+    applyPhase,
+    stage,
+  };
+
+  // ── Chat handler — triggers stage flow when possible, otherwise gives text reply ──
+  const handleChatSend = (text: string) => {
+    const lower = text.toLowerCase().trim();
+    const isAffirmative = /^(yes|yeah|yep|sure|ok|okay|please|do it|go ahead|absolutely|definitely|add them|sounds good|let's do it|why not|yea|ya|y$|go for it|first one|option 1|1$)/i.test(lower);
+    const isSecondOption = /^(second|option 2|2$|the other one|other|latter)/i.test(lower);
+
+    // ── Intent stage: match typed text to an intent, or default to best guess ──
+    if (stage === "intent" || stage === "welcome_back") {
+      const intentMatch = matchIntent(lower);
+      // Always advance — if no specific match, default to "prioritise"
+      handleIntent(intentMatch || "prioritise", text);
+      return;
+    }
+
+    // ── Approach stage: match typed text to an approach pill ──
+    if (stage === "approach" && intentChoice) {
+      const s2 = STAGE2[intentChoice];
+      if (s2) {
+        // Try to match text to a specific approach
+        const approachMatch = matchApproach(lower, intentChoice, s2);
+        if (approachMatch) {
+          handleApproach(approachMatch.key, text);
+          return;
+        }
+        // "yes", "first one", "1" → pick first available pill
+        if (isAffirmative && s2.pills.length > 0) {
+          const pill = s2.pills[0];
+          handleApproach(pill.key, text);
+          return;
+        }
+        // "second", "2", "other" → pick second pill
+        if (isSecondOption && s2.pills.length > 1) {
+          const pill = s2.pills[1];
+          handleApproach(pill.key, text);
+          return;
+        }
+        // Check if user is switching to a different intent
+        const intentRematch = matchIntent(lower);
+        if (intentRematch && intentRematch !== intentChoice) {
+          handleIntent(intentRematch, text);
+          return;
+        }
+        // Anything else at approach stage → just pick the first approach
+        handleApproach(s2.pills[0].key, text);
+        return;
+      }
+    }
+
+    // ── Formula stage: "yes" to insights nudge or closing ──
+    if (stage === "formula" && formula) {
+      if (isAffirmative && formula.insightsNudge) {
+        setChatMessages((prev) => [...prev, { role: 'user', text }]);
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          const fTitle = formula.cardTitle.replace("Formula - ", "");
+          const reply = `Done! I've updated the ${fTitle} formula to include your Insights data. Likes now boosts items with real user demand, and Error count adds a risk penalty for items with reported issues. The scores in your table reflect the change.`;
+          lastAiReplyRef.current = reply;
+          setChatMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+        }, 1200);
+        return;
+      }
+    }
+
+    // ── Fallback: "yes" after an AI chat reply that asked a question ──
+    if (isAffirmative && lastAiReplyRef.current) {
+      const lastReply = lastAiReplyRef.current.toLowerCase();
+      if (lastReply.includes("want") || lastReply.includes("show you")) {
+        // Try to infer what to do from the last reply
+        if (!intentChoice) {
+          if (lastReply.includes("insight") || lastReply.includes("research")) { handleIntent("insights", text); return; }
+          if (lastReply.includes("rice") || lastReply.includes("priorit")) { handleIntent("prioritise", text); return; }
+          if (lastReply.includes("weight") || lastReply.includes("score")) { handleIntent("score", text); return; }
+          if (lastReply.includes("sum") || lastReply.includes("average")) { handleIntent("average", text); return; }
+        }
+      }
+    }
+
+    // ── Last resort: text reply via context-aware function ──
+    setChatMessages((prev) => [...prev, { role: 'user', text }]);
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      const reply = getContextAwareReply(text, chatContext);
+      lastAiReplyRef.current = reply;
+      setChatMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+    }, 1200);
+  };
+
+  // Helper: match text to an intent key (short prefixes to handle typos)
+  function matchIntent(lower: string): string | null {
+    if (/priori|rank.*first|what.*work.*on|important|urgent/i.test(lower)) return "prioritise";
+    if (/insig|resear|likes|error.?count|user.?data|real.?data|formula.*my/i.test(lower)) return "insights";
+    if (/score|potential|rate|evaluat|compar/i.test(lower)) return "score";
+    if (/sum|add.?up|averag|mean|total|calculat/i.test(lower)) return "average";
+    // Catch-all: "formula" or "create" with context clues
+    if (/formula/i.test(lower)) return "insights";
+    return null;
+  }
+
+  // Helper: match text to an approach key within a stage2
+  function matchApproach(lower: string, intent: string, s2: typeof STAGE2[string]): { key: string } | null {
+    // Try matching against pill labels first
+    for (const pill of s2.pills) {
+      const pillWords = pill.label.toLowerCase().split(/\s+/);
+      const matchCount = pillWords.filter((w) => w.length > 3 && lower.includes(w)).length;
+      if (matchCount >= 2) return { key: pill.key };
+    }
+    // Intent-specific keyword matching
+    if (intent === "prioritise") {
+      if (/roi|return|investment|bang.*buck/i.test(lower)) return { key: "roi" };
+      if (/total|add up|overall|simple/i.test(lower)) return { key: "total" };
+    }
+    if (intent === "score") {
+      if (/weight/i.test(lower)) return { key: "weighted" };
+      if (/normal/i.test(lower)) return { key: "normalize" };
+    }
+    if (intent === "average") {
+      if (/sum|add/i.test(lower)) return { key: "sum" };
+      if (/average|mean/i.test(lower)) return { key: "average" };
+    }
+    if (intent === "insights") {
+      if (/priori|resear|rank|demand|risk/i.test(lower)) return { key: "research_priority" };
+      if (/sentim|feel|ratio|mood/i.test(lower)) return { key: "sentiment" };
+    }
+    return null;
+  }
 
   const handleIntent = (key: string, label: string) => {
     setIntentChoice(key);
@@ -457,6 +783,7 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
     setApproachChoice(key);
     setApproachLabel(label);
     setApplyPhase('loading');
+    setFormulaRevealStep(0);
     setStage("formula");
 
     // Immediately trigger preview on the table
@@ -483,6 +810,7 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
     setApproachChoice(null);
     setApproachLabel("");
     setApplyPhase('idle');
+    setFormulaRevealStep(0);
     setStage("approach");
   };
 
@@ -526,12 +854,12 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
   };
 
   const s2 = intentChoice ? STAGE2[intentChoice] : null;
-  const formula = intentChoice && approachChoice ? FORMULAS[intentChoice]?.[approachChoice] : null;
   // Filter out already-tried approaches from pills
   const triedKeys = new Set(pastFormulas.map((p) => p.approachKey));
   const availablePills = s2?.pills.filter((p) => !triedKeys.has(p.key) && p.key !== approachChoice) ?? [];
 
   return (
+    <>
     <div
       ref={scrollRef}
       style={{
@@ -560,7 +888,7 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
               </div>
 
               {applied.map((f: any, idx: number) => (
-                <CompactFormulaDisplay key={idx} cardTitle={f.cardTitle} cardLines={f.cardLines} />
+                <FormulaCard key={idx} title={f.cardTitle} lines={f.cardLines} />
               ))}
 
               <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.5 }}>
@@ -699,159 +1027,261 @@ function PanelBody({ chatMessages }: { chatMessages: { role: 'user' | 'ai'; text
         {/* ════ Stage 3: Current Formula ════ */}
         {formula && (
           <>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <AgentAvatar size={28} />
-              <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
-                {formula.intro}
-              </span>
-            </div>
-
-            <FormulaCard title={formula.cardTitle} lines={formula.cardLines} />
-
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <AgentAvatar size={28} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#222428", lineHeight: 1.5 }}>Explanation:</span>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 4 }}>
-                  {formula.bullets.map((b, i) => (
-                    <span key={i} style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.5 }}>
-                      •&ensp;{b}
-                    </span>
-                  ))}
-                </div>
-                <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, marginTop: 4 }}>
-                  {formula.closing}
-                </span>
-              </div>
-            </div>
-
-            {applyPhase === 'loading' ? (
-              /* Loading — preview generating on the table */
+            {/* Step 0: Sidekick is analyzing */}
+            {formulaRevealStep === 0 && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <AgentAvatar size={28} />
-                <span style={{ fontSize: 14, fontWeight: 400, color: "#6f7489", lineHeight: 1.6, paddingTop: 4 }}>
-                  Generating preview on your table
-                  <span style={{ display: "inline-block", width: 20, textAlign: "left" }}>
-                    <span style={{ animation: "dotPulse 1.4s infinite" }}>...</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingTop: 4 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: "#6f7489", lineHeight: 1.6 }}>
+                    Analyzing your table columns and data
+                    <span style={{ display: "inline-block", width: 20, textAlign: "left" }}>
+                      <span style={{ animation: "dotPulse 1.4s infinite" }}>...</span>
+                    </span>
                   </span>
-                </span>
-              </div>
-            ) : applyPhase === 'preview' ? (
-              /* Preview ready — show Apply + Try different buttons */
-              <>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <AgentAvatar size={28} />
-                  <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
-                    Preview is ready — check the <span style={{ fontWeight: 600 }}>{formula.cardTitle.replace("Formula - ", "")}</span> column in your table. If it looks good, apply it.
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  <div
-                    onClick={handleApply}
-                    style={{
-                      background: "#222428",
-                      color: "#fff",
-                      borderRadius: 8,
-                      padding: "8px 16px",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    Apply to table
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
+                    {["Reach", "Impact", "Confidence", "Effort", "Likes", "Errors"].map((col) => (
+                      <span key={col} style={{
+                        fontSize: 11, fontWeight: 600, color: "#7C3AED", background: "#F5F3FF",
+                        borderRadius: 4, padding: "2px 8px", animation: "fadeSlideIn 600ms ease-out both",
+                      }}>{col}</span>
+                    ))}
                   </div>
-                  {availablePills.length > 0 && (
-                    <div
-                      onClick={handleTryDifferent}
-                      style={{
-                        background: "#fff",
-                        color: "#222428",
-                        border: "1px solid #222428",
-                        borderRadius: 8,
-                        padding: "8px 16px",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      Try a different approach
-                    </div>
-                  )}
                 </div>
-              </>
-            ) : applyPhase === 'done' ? (
-              /* Done */
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-                  <circle cx="12" cy="12" r="12" fill="#059669" />
-                  <path d="M7 12.5l3 3 7-7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#059669", lineHeight: 1.6, paddingTop: 3 }}>
-                  Done — {formula.cardTitle.replace("Formula - ", "")} column added to your table.
-                </span>
               </div>
-            ) : null}
+            )}
 
-            {/* Insights nudge — only for formulas that don't already use Insights */}
-            {formula.insightsNudge && (
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F5F3FF", borderRadius: 8, padding: 12 }}>
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
-                  <path d="M8.678 3.207c.325-1.368 2.319-1.37 2.644 0l.026.142.042.255c.49 2.625 2.599 4.662 5.26 5.046 1.554.224 1.562 2.473 0 2.698-2.747.394-4.906 2.552-5.302 5.3-.224 1.562-2.474 1.554-2.698 0-.396-2.747-2.554-4.906-5.302-5.3-1.559-.225-1.556-2.474 0-2.699l.256-.042c2.625-.49 4.662-2.599 5.046-5.26l.028-.14Z" fill="#7C3AED" />
-                </svg>
-                <span style={{ fontSize: 13, fontWeight: 400, color: "#5B21B6", lineHeight: 1.5 }}>
-                  {formula.insightsNudge}
+            {/* Step 1+: Intro text */}
+            {formulaRevealStep >= 1 && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: formulaRevealStep === 1 ? "fadeSlideIn 400ms ease-out both" : undefined }}>
+                <AgentAvatar size={28} />
+                <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
+                  {formula.intro}
                 </span>
               </div>
+            )}
+
+            {/* Step 2+: Formula card */}
+            {formulaRevealStep >= 2 && (
+              <div style={{ animation: formulaRevealStep === 2 ? "fadeSlideIn 400ms ease-out both" : undefined }}>
+                <FormulaCard title={formula.cardTitle} lines={formula.cardLines} />
+              </div>
+            )}
+
+            {/* Step 3+: Explanation bullets + closing */}
+            {formulaRevealStep >= 3 && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: formulaRevealStep === 3 ? "fadeSlideIn 400ms ease-out both" : undefined }}>
+                <AgentAvatar size={28} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#222428", lineHeight: 1.5 }}>Explanation:</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 4 }}>
+                    {formula.bullets.map((b, i) => (
+                      <span key={i} style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.5 }}>
+                        •&ensp;{b}
+                      </span>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, marginTop: 4 }}>
+                    {formula.closing}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Outcomes — apply phase, insights nudge */}
+            {formulaRevealStep >= 4 && (
+              <>
+                {applyPhase === 'loading' ? (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fadeSlideIn 400ms ease-out both" }}>
+                    <AgentAvatar size={28} />
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "#6f7489", lineHeight: 1.6, paddingTop: 4 }}>
+                      Generating preview on your table
+                      <span style={{ display: "inline-block", width: 20, textAlign: "left" }}>
+                        <span style={{ animation: "dotPulse 1.4s infinite" }}>...</span>
+                      </span>
+                    </span>
+                  </div>
+                ) : applyPhase === 'preview' ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fadeSlideIn 400ms ease-out both" }}>
+                      <AgentAvatar size={28} />
+                      <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
+                        Preview is ready — check the <span style={{ fontWeight: 600 }}>{formula.cardTitle.replace("Formula - ", "")}</span> column in your table. If it looks good, apply it.
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <Button size="medium" onPress={handleApply}>Apply to table</Button>
+                      {availablePills.length > 0 && (
+                        <Button size="medium" variant="secondary" onPress={handleTryDifferent}>Try a different approach</Button>
+                      )}
+                    </div>
+                  </>
+                ) : applyPhase === 'done' ? (
+                  <DoneWithFormula formula={formula} />
+                ) : null}
+
+                {/* Insights nudge */}
+                {formula.insightsNudge && (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F5F3FF", borderRadius: 8, padding: 12, animation: "fadeSlideIn 400ms ease-out both" }}>
+                    <div style={{ flexShrink: 0, marginTop: 2 }}>
+                      <GradientSparks size="small" />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 400, color: "#5B21B6", lineHeight: 1.5 }}>
+                      {formula.insightsNudge}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
 
         {/* ════ Free-text chat messages ════ */}
-        {chatMessages.length > 0 && (
-          <>
-            {chatMessages.map((msg, i) =>
-              msg.role === 'user' ? (
-                <UserBubble key={`chat-${i}`} text={msg.text} />
-              ) : (
-                <div key={`chat-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <AgentAvatar size={28} />
-                  <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
-                    {msg.text}
-                  </span>
-                </div>
-              )
-            )}
-          </>
-        )}
+        {chatMessages.map((msg, i) => {
+          if (msg.role === 'user') {
+            return <UserBubble key={`chat-${i}`} text={msg.text} />;
+          }
+          const isLatestAi = !chatMessages.slice(i + 1).some((m) => m.role === 'ai');
+          const shouldStream = isLatestAi && !streamedSet.current.has(i);
+          return (
+            <div key={`chat-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <AgentAvatar size={28} />
+              <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
+                {shouldStream ? (
+                  <StreamingText
+                    text={msg.text}
+                    speed={20}
+                    onComplete={() => { streamedSet.current.add(i); forceUpdate((n) => n + 1); }}
+                  />
+                ) : msg.text}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Typing indicator while AI is thinking */}
+        {isTyping && <TypingIndicator />}
       </div>
     </div>
+    <PanelInput onSend={handleChatSend} />
+    </>
   );
 }
 
-/* ─── Canned AI responses for free-text chat ─── */
-const CANNED_RESPONSES: { match: RegExp; reply: string }[] = [
-  { match: /rice|priorit/i, reply: "RICE scoring is a great way to prioritise — it combines Reach, Impact, Confidence, and Effort into a single number. Want me to generate a RICE formula for your table?" },
-  { match: /insight|likes|error count|research/i, reply: "Your Insights data (Likes and Error count) reflects real user behaviour. I can factor those into any formula to make it more accurate. Want me to show you how?" },
-  { match: /weight|custom/i, reply: "I can create a weighted formula where you control how much each column matters. Just tell me which columns to include and I'll set up the weights." },
-  { match: /sum|add|total/i, reply: "I can add up any combination of your numeric columns. Would you like a simple sum, or should I subtract Effort from the total?" },
-  { match: /average|mean/i, reply: "An average across your columns gives a balanced view of each item. Want me to include all 6 numeric columns, or just specific ones?" },
-  { match: /explain|what does|how does|what is/i, reply: "Happy to explain! RICE stands for Reach × Impact × Confidence ÷ Effort. It ranks items by their return on investment — higher scores mean more value for less work." },
-  { match: /change|adjust|modify|edit/i, reply: "You can adjust any formula after it's applied. Just let me know what you'd like to change — column weights, which fields to include, or the calculation method." },
-  { match: /hello|hi|hey/i, reply: "Hey! I'm here to help you build formulas for your table. What would you like to figure out?" },
-  { match: /thank|thanks/i, reply: "You're welcome! Let me know if you need anything else with your table." },
-];
+/* ─── Chat context for context-aware replies ─── */
+interface ChatContext {
+  intentKey: string | null;
+  approachKey: string | null;
+  formulaTitle: string | null;
+  formulaBullets: string[] | null;
+  formulaLines: string[] | null;
+  hasInsightsNudge: boolean;
+  insightsNudgeText: string | null;
+  closingText: string | null;
+  applyPhase: string;
+  stage: string;
+}
 
-const DEFAULT_REPLY = "I can help you create formulas, prioritise items, or work with your Insights data. Try asking me something like \"help me prioritise\" or \"use my research data\".";
+/* ─── Context-aware AI reply ─── */
+function getContextAwareReply(message: string, ctx: ChatContext): string {
+  const lower = message.toLowerCase().trim();
 
-function getAiReply(message: string): string {
-  for (const { match, reply } of CANNED_RESPONSES) {
-    if (match.test(message)) return reply;
+  const isAffirmative = /^(yes|yeah|yep|sure|ok|okay|please|do it|go ahead|absolutely|definitely|add them|sounds good|let's do it|why not|yea|ya|y$)/i.test(lower);
+  const isNegative = /^(no|nah|not now|skip|maybe later|nope|i'm good|not yet|no thanks|n$)/i.test(lower);
+
+  // ── 1. Responding to the Insights nudge ──
+  if (ctx.hasInsightsNudge && ctx.formulaTitle) {
+    if (isAffirmative) {
+      return `Done! I've updated the ${ctx.formulaTitle} formula to include your Insights data. Likes now boosts items with real user demand, and Error count adds a risk penalty for items with reported issues. The scores in your table reflect the change.`;
+    }
+    if (isNegative) {
+      return `No problem — ${ctx.formulaTitle} works well on its own. You can always add Insights data later if you want to factor in real user signals.`;
+    }
   }
-  return DEFAULT_REPLY;
+
+  // ── 2. Responding to the closing question ──
+  if (ctx.closingText && ctx.formulaTitle) {
+    if (isAffirmative) {
+      return `Sure! I can adjust ${ctx.formulaTitle} for you. What would you like to change — the column weights, which fields to include, or the overall calculation method?`;
+    }
+    if (isNegative) {
+      return `Got it — ${ctx.formulaTitle} looks good as is. Let me know if you want to tweak anything later.`;
+    }
+  }
+
+  // ── 3. Formula-specific questions ──
+  if (ctx.formulaTitle && ctx.formulaBullets) {
+    // Explain / how it works
+    if (/how does|how do|explain|what does|what is|tell me more|break.*down|what.*mean|walk me through/i.test(lower)) {
+      const bullets = ctx.formulaBullets.map((b) => `• ${b}`).join('\n');
+      return `Here's how ${ctx.formulaTitle} works:\n\n${bullets}\n\nWant me to adjust anything?`;
+    }
+
+    // Why this formula
+    if (/why|reason|logic behind|rationale/i.test(lower)) {
+      return `${ctx.formulaTitle} is designed to give you a single number per row that captures multiple signals. ${ctx.formulaBullets[0]} This makes it easy to sort and compare items at a glance — higher score means higher priority.`;
+    }
+
+    // Modify / tweak
+    if (/change|adjust|modify|weight|tweak|update|custom/i.test(lower)) {
+      return `I can customize ${ctx.formulaTitle} for you. For example, I can make certain columns count more, remove columns you don't need, or swap the calculation method entirely. What would you like to change?`;
+    }
+
+    // Which columns
+    if (/column|field|which|what.*include|what.*using|variable/i.test(lower)) {
+      const hasInsights = ctx.formulaLines?.some((l) => l.includes('Insights'));
+      return `${ctx.formulaTitle} currently uses Reach, Impact, Confidence, and Effort from your table.${hasInsights ? ' It also factors in Likes and Error count from your Insights research.' : ' I can also add your Insights data (Likes and Error count) for real user signals — want me to include them?'}`;
+    }
+
+    // Reliability / accuracy
+    if (/accurate|reliable|trust|good enough|confident|valid/i.test(lower)) {
+      return `${ctx.formulaTitle} is a well-established framework used by product teams worldwide. The scores are only as reliable as your input data — make sure your Reach and Impact estimates are up to date for the most accurate results.`;
+    }
+
+    // Sorting / using results
+    if (/sort|rank|order|highest|lowest|best|worst|top|bottom|use.*result/i.test(lower)) {
+      return `Once applied, you can sort the ${ctx.formulaTitle} column to see your highest-priority items at the top. Higher score = more value relative to effort. You can also use it to filter out low-scoring items.`;
+    }
+
+    // Specific column questions
+    if (/reach/i.test(lower) && !/research/i.test(lower)) {
+      return `Reach measures how many people or projects each item affects. In ${ctx.formulaTitle}, higher reach pushes the score up — items that touch more users are considered more impactful.`;
+    }
+    if (/impact/i.test(lower)) {
+      return `Impact measures how much each item moves the needle — typically rated 1 (minimal) to 3 (massive). In ${ctx.formulaTitle}, items with higher impact get a significant score boost.`;
+    }
+    if (/confidence/i.test(lower)) {
+      return `Confidence reflects how sure you are about the estimates. A confidence of 1 means you're certain, 0.5 means it's a rough guess. It acts as a multiplier — lower confidence tempers the overall score.`;
+    }
+    if (/effort/i.test(lower)) {
+      return `Effort represents the work required — time, people, complexity. In ${ctx.formulaTitle}, effort divides the score, so less effort = higher priority. Think of it as the "cost" side of a cost-benefit equation.`;
+    }
+    if (/likes/i.test(lower)) {
+      return `Likes come from your Insights research and represent real user demand — items that users actually want or voted for. Adding Likes to the formula means popular items get a boost in their score.`;
+    }
+    if (/error|bug/i.test(lower)) {
+      return `Error count comes from your Insights data and flags risk. Items with more reported errors might need urgent attention, or they might signal lower confidence. In the formula, errors typically act as a penalty.`;
+    }
+
+    // Compare formulas
+    if (/different|other|alternative|compare|vs|versus|better/i.test(lower)) {
+      return `${ctx.formulaTitle} is one approach. I can also show you a simpler total value score, a weighted score where you control importance per column, or a normalized version that puts all columns on the same scale. Want me to try a different one?`;
+    }
+  }
+
+  // ── 4. General keyword fallbacks (short prefixes for typo tolerance) ──
+  if (/rice|priori/i.test(lower)) return "RICE scoring combines Reach × Impact × Confidence ÷ Effort into a single priority number. Want me to generate a RICE formula for your table?";
+  if (/insig|likes|error.?count|resear|formula/i.test(lower)) return "Your Insights data (Likes and Error count) reflects real user behaviour. I can factor those into any formula. Want me to show you how?";
+  if (/sum|add.?up|total/i.test(lower)) return "I can add up any combination of your numeric columns. Would you like a simple sum, or should I subtract Effort from the total?";
+  if (/averag|mean/i.test(lower)) return "An average across your columns gives a balanced view of each item. Want me to include all 6 numeric columns, or just specific ones?";
+  if (/hello|hi|hey/i.test(lower)) return "Hey! I'm here to help you build formulas for your table. What would you like to figure out?";
+  if (/thank|thanks/i.test(lower)) return "You're welcome! Let me know if you need anything else with your table.";
+
+  // ── 5. Context-aware default ──
+  if (ctx.formulaTitle) {
+    return `I can help with your ${ctx.formulaTitle} formula — ask me how it works, what the columns mean, or how to adjust it. You can also ask me to add your Insights data or try a completely different approach.`;
+  }
+
+  return "I can help you create formulas, prioritise items, or work with your Insights data. Try asking me something like \"help me prioritise\" or \"use my research data\".";
 }
 
 /* ─── Input area ─── */
@@ -978,23 +1408,11 @@ function PanelInput({ onSend }: { onSend: (text: string) => void }) {
 
 /* ─── Main export ─── */
 export default function AiPanelSolutionReview() {
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
-
-  const handleSend = (text: string) => {
-    // Add user message
-    setChatMessages((prev) => [...prev, { role: 'user', text }]);
-    // Simulate AI thinking, then reply
-    setTimeout(() => {
-      const reply = getAiReply(text);
-      setChatMessages((prev) => [...prev, { role: 'ai', text: reply }]);
-    }, 800);
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", maxWidth: "100%", background: "#fff", borderRadius: 8, overflow: "hidden" }}>
+      <AiGradientDefs />
       <PanelHeader />
-      <PanelBody chatMessages={chatMessages} />
-      <PanelInput onSend={handleSend} />
+      <PanelBody />
     </div>
   );
 }
