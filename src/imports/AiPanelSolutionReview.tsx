@@ -563,8 +563,181 @@ const STAGE2: Record<string, {
   },
 };
 
+/* ─── Format-specific intro content for non-table formats ─── */
+const FORMAT_INTROS: Record<string, {
+  description: React.ReactNode;
+  visual: React.ReactNode;
+  pills: { label: string; key: string }[];
+}> = {
+  slides: {
+    description: <>Your presentation has 3 slides with content but no speaker notes. I can help you <span style={{ fontWeight: 600 }}>draft talking points</span>, create a <span style={{ fontWeight: 600 }}>summary</span>, or suggest <span style={{ fontWeight: 600 }}>better layouts</span>.</>,
+    visual: (
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", padding: "16px 0" }}>
+        {[1, 2, 3].map(n => (
+          <div key={n} style={{ width: 96, height: 64, borderRadius: 8, background: `linear-gradient(135deg, ${n === 1 ? '#8B7FE8' : n === 2 ? '#9B8FEF' : '#A78BFA'}, #C4B5FD)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <span style={{ color: "#fff", fontSize: 10, fontWeight: 600, fontFamily: "var(--font-noto)" }}>Slide {n}</span>
+          </div>
+        ))}
+      </div>
+    ),
+    pills: [
+      { key: "speaker_notes", label: "Draft speaker notes for each slide" },
+      { key: "summary", label: "Create a summary of the deck" },
+    ],
+  },
+  diagram: {
+    description: <>Your diagram has a decision flow with multiple paths. I can <span style={{ fontWeight: 600 }}>check for dead ends</span>, spot <span style={{ fontWeight: 600 }}>missing connections</span>, or suggest <span style={{ fontWeight: 600 }}>simplifications</span>.</>,
+    visual: (
+      <svg width="100%" height="80" viewBox="0 0 300 80" fill="none" style={{ padding: "8px 0" }}>
+        <rect x="10" y="25" width="50" height="28" rx="14" fill="#6C5CE7" />
+        <text x="35" y="43" fill="#fff" fontSize="10" textAnchor="middle" fontFamily="var(--font-noto)" fontWeight="600">Start</text>
+        <line x1="60" y1="39" x2="85" y2="39" stroke="#9CA3AF" strokeWidth="1.5" />
+        <rect x="85" y="22" width="65" height="34" rx="5" fill="#F3F0FF" stroke="#6C5CE7" strokeWidth="1.2" />
+        <text x="117" y="43" fill="#222" fontSize="9" textAnchor="middle" fontFamily="var(--font-noto)">Research</text>
+        <line x1="150" y1="39" x2="175" y2="39" stroke="#9CA3AF" strokeWidth="1.5" />
+        <rect x="182" y="28" width="22" height="22" rx="3" transform="rotate(45 193 39)" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.2" />
+        <text x="193" y="43" fill="#92400E" fontSize="10" textAnchor="middle" fontWeight="700">?</text>
+        <line x1="208" y1="39" x2="235" y2="39" stroke="#10B981" strokeWidth="1.5" />
+        <rect x="235" y="25" width="50" height="28" rx="14" fill="#10B981" />
+        <text x="260" y="43" fill="#fff" fontSize="10" textAnchor="middle" fontFamily="var(--font-noto)" fontWeight="600">Done</text>
+        <line x1="193" y1="55" x2="193" y2="68" stroke="#EF4444" strokeWidth="1.2" strokeDasharray="3 2" />
+        <circle cx="193" cy="73" r="5" fill="#FEF2F2" stroke="#EF4444" strokeWidth="1" />
+        <text x="193" y="76" fill="#EF4444" fontSize="8" textAnchor="middle" fontWeight="700">!</text>
+      </svg>
+    ),
+    pills: [
+      { key: "check_paths", label: "Spot missing paths or loops" },
+      { key: "simplify", label: "Simplify the flow" },
+    ],
+  },
+  prototype: {
+    description: <>Your prototype has 3 screens showing a user flow. I can <span style={{ fontWeight: 600 }}>generate a test script</span>, create <span style={{ fontWeight: 600 }}>edge case scenarios</span>, or suggest <span style={{ fontWeight: 600 }}>UX improvements</span>.</>,
+    visual: (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "12px 0" }}>
+        {[{ color: "#6C5CE7", label: "Home" }, { color: "#3B82F6", label: "Cart" }, { color: "#10B981", label: "Pay" }].map((s, i) => (
+          <React.Fragment key={i}>
+            <div style={{ width: 64, height: 100, borderRadius: 12, border: `2px solid ${s.color}`, background: "#fff", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ height: 18, background: s.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#fff", fontSize: 8, fontWeight: 600, fontFamily: "var(--font-noto)" }}>{s.label}</span>
+              </div>
+              <div style={{ padding: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "80%" }} />
+                <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "60%" }} />
+              </div>
+            </div>
+            {i < 2 && <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 8h8M10 5l3 3-3 3" stroke="#9CA3AF" strokeWidth="1.5" fill="none" /></svg>}
+          </React.Fragment>
+        ))}
+      </div>
+    ),
+    pills: [
+      { key: "test_flow", label: "Generate a test flow" },
+      { key: "ux_improve", label: "Suggest UX improvements" },
+    ],
+  },
+  document: {
+    description: <>Your doc has a detailed retrospective with multiple sections. I can add a <span style={{ fontWeight: 600 }}>TL;DR summary</span>, generate <span style={{ fontWeight: 600 }}>action items</span>, or help <span style={{ fontWeight: 600 }}>restructure</span> the content.</>,
+    visual: (
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ border: "1.5px dashed #7C3AED", borderRadius: 6, padding: "8px 10px", background: "rgba(124, 58, 237, 0.04)" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", fontFamily: "var(--font-noto)" }}>TL;DR</span>
+          <div style={{ height: 3, borderRadius: 1, background: "#7C3AED", opacity: 0.2, width: "90%", marginTop: 4 }} />
+          <div style={{ height: 3, borderRadius: 1, background: "#7C3AED", opacity: 0.15, width: "70%", marginTop: 3 }} />
+        </div>
+        <div style={{ height: 8, borderRadius: 2, background: "#222428", width: "50%", marginTop: 4 }} />
+        <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "85%" }} />
+        <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "75%" }} />
+      </div>
+    ),
+    pills: [
+      { key: "summary", label: "Add a summary / TL;DR" },
+      { key: "action_items", label: "Extract action items" },
+    ],
+  },
+  timeline: {
+    description: <>Your timeline has 9 tasks across September and October. I can <span style={{ fontWeight: 600 }}>flag scheduling risks</span>, identify <span style={{ fontWeight: 600 }}>bottlenecks</span>, or suggest <span style={{ fontWeight: 600 }}>resource rebalancing</span>.</>,
+    visual: (
+      <div style={{ padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+        {[
+          { label: "Design", color: "#3859FF", start: "0%", w: "45%" },
+          { label: "Dev", color: "#1C8F00", start: "20%", w: "55%" },
+          { label: "QA", color: "#FFD02F", start: "50%", w: "35%" },
+        ].map((bar, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", height: 16, position: "relative" }}>
+            <span style={{ fontSize: 9, color: "#6f7489", fontFamily: "var(--font-noto)", width: 42, textAlign: "right", paddingRight: 6 }}>{bar.label}</span>
+            <div style={{ flex: 1, position: "relative", height: 12 }}>
+              <div style={{ position: "absolute", left: bar.start, width: bar.w, height: "100%", borderRadius: 4, background: bar.color, opacity: 0.2 }} />
+              <div style={{ position: "absolute", left: bar.start, width: bar.w, height: "100%", borderRadius: 4, border: `1.5px solid ${bar.color}50` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+    pills: [
+      { key: "flag_risks", label: "Flag risks in your plan" },
+      { key: "rebalance", label: "Suggest resource rebalancing" },
+    ],
+  },
+  talktrack: {
+    description: <>Your talktrack has a recorded session with multiple speakers. I can <span style={{ fontWeight: 600 }}>generate a transcript</span>, extract <span style={{ fontWeight: 600 }}>key decisions</span>, or create <span style={{ fontWeight: 600 }}>follow-up action items</span>.</>,
+    visual: (
+      <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Miro talktrack waveform + speaker lanes */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, position: "relative" }}>
+          {/* Waveform */}
+          <div style={{ display: "flex", alignItems: "center", gap: 1, height: 32, padding: "0 4px" }}>
+            {[3,6,3,10,14,3,8,18,3,12,22,16,3,8,24,18,10,3,6,14,20,3,10,16,8,3,12,6,3,18,14,3,8,20,3,12,24,16,3,10,6,3,14,8,3,18,12,3,6,10,3,16,8,3,14,20,3,10].map((h, i) => (
+              <div key={i} style={{
+                width: 2, height: h, borderRadius: 1, flexShrink: 0,
+                background: i < 22 ? "#9CA3AF" : "#D1D5DB",
+                opacity: i < 22 ? 0.7 : 0.4,
+              }} />
+            ))}
+          </div>
+
+          {/* Speaker lane 1 — green */}
+          <div style={{ display: "flex", alignItems: "center", gap: 2, height: 10, background: "#F3F4F6", borderRadius: 5, padding: "0 2px" }}>
+            {[6,3,18,4,12,3,24,5,6,3,8,4,30,3,20].map((w, i) => (
+              <div key={i} style={{ width: w, height: i % 2 === 0 ? 8 : 4, borderRadius: 4, background: i % 2 === 0 ? "#22C55E" : "transparent", flexShrink: 0 }} />
+            ))}
+          </div>
+
+          {/* Speaker lane 2 — purple */}
+          <div style={{ display: "flex", alignItems: "center", gap: 2, height: 10, background: "#F3F4F6", borderRadius: 5, padding: "0 2px" }}>
+            {[4,8,6,12,4,6,14,4,8,3,6,5,10,4,8].map((w, i) => (
+              <div key={i} style={{ width: w, height: i % 2 === 0 ? 8 : 4, borderRadius: 4, background: i % 2 === 0 ? "#7C3AED" : "transparent", flexShrink: 0 }} />
+            ))}
+          </div>
+
+          {/* Playhead */}
+          <div style={{
+            position: "absolute", left: "38%", top: 0, bottom: 0, width: 1.5, background: "#7C3AED",
+          }}>
+            <div style={{ position: "absolute", top: -2, left: -4, width: 9, height: 9, borderRadius: "50%", background: "#7C3AED" }} />
+            <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#7C3AED", borderRadius: 6, padding: "1px 5px", fontSize: 7, color: "#fff", fontWeight: 600, fontFamily: "var(--font-noto)", whiteSpace: "nowrap" }}>03:24</div>
+          </div>
+
+          {/* Miro cursors */}
+          <div style={{ position: "absolute", top: 2, right: 16 }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1 1l4 10 1.5-4L11 5.5 1 1z" fill="#EF4444" opacity="0.7"/></svg>
+            <div style={{ background: "#FECACA", borderRadius: 8, padding: "1px 6px", fontSize: 7, fontWeight: 600, color: "#991B1B", fontFamily: "var(--font-noto)", marginTop: -2, marginLeft: 8, whiteSpace: "nowrap" }}>Bryan</div>
+          </div>
+          <div style={{ position: "absolute", bottom: 2, left: 24 }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M1 1l4 10 1.5-4L11 5.5 1 1z" fill="#6366F1" opacity="0.7"/></svg>
+            <div style={{ background: "#C7D2FE", borderRadius: 8, padding: "1px 6px", fontSize: 7, fontWeight: 600, color: "#3730A3", fontFamily: "var(--font-noto)", marginTop: -2, marginLeft: 8, whiteSpace: "nowrap" }}>Luca</div>
+          </div>
+        </div>
+      </div>
+    ),
+    pills: [
+      { key: "transcript", label: "Generate a transcript" },
+      { key: "decisions", label: "Extract key decisions" },
+    ],
+  },
+};
+
 /* ─── Main content area (owns chat state + stage flow) ─── */
-function PanelBody() {
+function PanelBody({ formatContext }: { formatContext?: string | null }) {
   // Detect if there's an applied formula from a previous session
   const [isWelcomeBack] = useState(() => ((window as any).__appliedFormulas?.length ?? 0) > 0);
   // stage: "welcome_back" | "intent" → "approach" → "formula" → can loop back via "try different"
@@ -587,6 +760,54 @@ function PanelBody() {
   const [, forceUpdate] = useState(0);
   // Progressive reveal: "analyzing" → intro → card → explanation → outcomes
   const [formulaRevealStep, setFormulaRevealStep] = useState<0 | 1 | 2 | 3 | 4>(0);
+
+  // ── Format-specific action flow (non-table formats) ──
+  const [formatAction, setFormatAction] = useState<{ label: string; generating: boolean; result: string | null } | null>(null);
+
+  const FORMAT_RESULTS: Record<string, Record<string, string>> = {
+    talktrack: {
+      "Generate a transcript": "Done! I've created a transcript document from your recording. It includes timestamps, speaker labels, and I've highlighted 3 key decisions and 2 action items.",
+      "Extract key decisions": "I've identified 4 key decisions from the recording and added them as sticky notes next to your talktrack. Each one is tagged with the speaker and timestamp.",
+    },
+    slides: {
+      "Draft speaker notes for each slide": "Speaker notes drafted! I've added talking points to all 3 slides. Each note includes the key message, supporting data points, and a suggested transition to the next slide.",
+      "Create a summary of the deck": "Summary created! I've generated a one-page document with the deck overview, key takeaways, and action items from your presentation.",
+    },
+    diagram: {
+      "Spot missing paths or loops": "I found 2 issues: one dead-end path after the decision node (no handler for 'No'), and a potential infinite loop between Process and Research. I've added annotations to your diagram.",
+      "Simplify the flow": "I've created a simplified version of your diagram next to the original — reduced from 6 nodes to 4 by merging the sequential steps.",
+    },
+    prototype: {
+      "Generate a test flow": "Test flow generated! I've created 5 test scenarios covering the happy path, error states, and edge cases. Each flow is mapped to your screens with expected outcomes.",
+      "Suggest UX improvements": "I found 3 UX improvements: the Cart screen needs a clear CTA, the Pay screen is missing a confirmation step, and the Home→Cart transition could use a loading state. Added as annotations.",
+    },
+    document: {
+      "Add a summary / TL;DR": "TL;DR added! I've inserted a summary at the top of your document highlighting the 3 key outcomes and 5 action items from the retrospective.",
+      "Extract action items": "I've extracted 5 action items from your document and added them as a checklist at the bottom, each tagged with an owner based on the discussion context.",
+    },
+    timeline: {
+      "Flag risks in your plan": "I found 3 risks: Dev and QA overlap in Week 3 with no buffer, the Design phase has no review checkpoint, and the QA window is too short for the scope. Added risk flags to your timeline.",
+      "Suggest resource rebalancing": "I've suggested shifting QA start by 1 week and adding a Design review milestone. This gives QA 40% more time and catches issues earlier. Updated timeline created next to the original.",
+    },
+  };
+
+  const handleFormatAction = (label: string) => {
+    // Find the best matching result key (handles CTA labels like "Draft notes" matching "Draft speaker notes for each slide")
+    let resultText: string | null = null;
+    if (formatContext && FORMAT_RESULTS[formatContext]) {
+      const keys = Object.keys(FORMAT_RESULTS[formatContext]);
+      const exact = keys.find(k => k === label);
+      const partial = keys.find(k => k.toLowerCase().includes(label.toLowerCase().split(" ")[0]));
+      resultText = FORMAT_RESULTS[formatContext][exact || partial || keys[0]] || null;
+    }
+
+    setFormatAction({ label, generating: true, result: null });
+    (window as any).__setAiGenerating?.(true);
+    setTimeout(() => {
+      setFormatAction({ label, generating: false, result: resultText || "Done! The action has been completed." });
+      (window as any).__setAiGenerating?.(false);
+    }, 3000);
+  };
 
   // Chat state (owned here so handlers can trigger stage flow)
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
@@ -611,6 +832,25 @@ function PanelBody() {
       }, 100);
     }
   }, [isTyping]);
+
+  // Check for pending format action (from nudge card CTA)
+  useEffect(() => {
+    const pending = (window as any).__pendingFormatAction;
+    if (pending && formatContext && FORMAT_INTROS[formatContext]) {
+      delete (window as any).__pendingFormatAction;
+      // Small delay to let the panel render first
+      setTimeout(() => handleFormatAction(pending), 300);
+    }
+  }, [formatContext]);
+
+  // Auto-scroll when format action changes
+  useEffect(() => {
+    if (formatAction && scrollRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
+    }
+  }, [formatAction]);
 
   // Current formula data
   const formula = intentChoice && approachChoice ? FORMULAS[intentChoice]?.[approachChoice] : null;
@@ -922,11 +1162,14 @@ function PanelBody() {
             </span>
 
             <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.5 }}>
-              I see you want to add a formula column. Your table has 6 numeric columns — and 2 of them, <span style={{ fontWeight: 600 }}>Likes</span> and <span style={{ fontWeight: 600 }}>Error count</span>, are coming from your <span style={{ color: "#7C3AED", fontWeight: 500 }}>Insights</span> research.
+              {formatContext && FORMAT_INTROS[formatContext]
+                ? FORMAT_INTROS[formatContext].description
+                : <>I see you want to add a formula column. Your table has 6 numeric columns — and 2 of them, <span style={{ fontWeight: 600 }}>Likes</span> and <span style={{ fontWeight: 600 }}>Error count</span>, are coming from your <span style={{ color: "#7C3AED", fontWeight: 500 }}>Insights</span> research.</>
+              }
             </span>
 
             <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.5 }}>
-              What are you trying to figure out?
+              {formatContext && FORMAT_INTROS[formatContext] ? "What would you like to do?" : "What are you trying to figure out?"}
             </span>
           </>
         )}
@@ -939,13 +1182,61 @@ function PanelBody() {
                 What kind of calculation would you like?
               </span>
             )}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <PromptPill label="Help me prioritise what to work on first" onClick={() => handleIntent("prioritise", "Help me prioritise what to work on first")} />
-              <PromptPill label="Use my research data to rank items" onClick={() => handleIntent("insights", "Use my research data to rank items")} />
-              <PromptPill label="Score items based on their potential" onClick={() => handleIntent("score", "Score items based on their potential")} />
-              <PromptPill label="Add up or average some numbers" onClick={() => handleIntent("average", "Add up or average some numbers")} />
-              <PromptPill label="I have something specific in mind" onClick={() => handleIntent("prioritise", "I have something specific in mind")} />
-            </div>
+
+            {/* Format-specific visual + pills */}
+            {formatContext && FORMAT_INTROS[formatContext] ? (
+              <>
+                <div style={{ background: "#F7F7F8", borderRadius: 8, overflow: "hidden" }}>
+                  {FORMAT_INTROS[formatContext].visual}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {!formatAction && FORMAT_INTROS[formatContext].pills.map((p) => (
+                    <PromptPill key={p.key} label={p.label} onClick={() => handleFormatAction(p.label)} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <PromptPill label="Help me prioritise what to work on first" onClick={() => handleIntent("prioritise", "Help me prioritise what to work on first")} />
+                <PromptPill label="Use my research data to rank items" onClick={() => handleIntent("insights", "Use my research data to rank items")} />
+                <PromptPill label="Score items based on their potential" onClick={() => handleIntent("score", "Score items based on their potential")} />
+                <PromptPill label="Add up or average some numbers" onClick={() => handleIntent("average", "Add up or average some numbers")} />
+                <PromptPill label="I have something specific in mind" onClick={() => handleIntent("prioritise", "I have something specific in mind")} />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════ Format-specific action flow (non-table) ════ */}
+        {formatAction && (
+          <>
+            <UserBubble text={formatAction.label} />
+
+            {formatAction.generating && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <AgentAvatar size={28} />
+                <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 6 }}>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    {[0, 1, 2].map(i => (
+                      <div key={i} style={{
+                        width: 6, height: 6, borderRadius: "50%", background: "#7C3AED",
+                        animation: `n-pulse 1s ease-in-out ${i * 0.2}s infinite`,
+                      }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 13, color: "#7D8297", fontFamily: "var(--font-noto)" }}>Generating...</span>
+                </div>
+              </div>
+            )}
+
+            {formatAction.result && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <AgentAvatar size={28} />
+                <span style={{ fontSize: 14, fontWeight: 400, color: "#222428", lineHeight: 1.6, paddingTop: 4 }}>
+                  {formatAction.result}
+                </span>
+              </div>
+            )}
           </>
         )}
 
@@ -1162,7 +1453,7 @@ function PanelBody() {
         {isTyping && <TypingIndicator />}
       </div>
     </div>
-    <PanelInput onSend={handleChatSend} />
+    <PanelInput onSend={handleChatSend} formatContext={formatContext} />
     </>
   );
 }
@@ -1284,8 +1575,19 @@ function getContextAwareReply(message: string, ctx: ChatContext): string {
   return "I can help you create formulas, prioritise items, or work with your Insights data. Try asking me something like \"help me prioritise\" or \"use my research data\".";
 }
 
+/* ─── Format label + icon for the input area chip ─── */
+const FORMAT_CHIP: Record<string, { label: string; icon: React.ReactNode }> = {
+  table: { label: "Create table", icon: <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path clipRule="evenodd" d="M2 0C.895 0 0 .895 0 2v9.333C0 12.438.895 13.333 2 13.333h9.333c1.105 0 2-.895 2-2V2c0-1.105-.895-2-2-2H2Zm-.667 2c0-.368.299-.667.667-.667h9.333c.369 0 .667.299.667.667v2H1.333V2ZM6 5.333h6V8H6V5.333ZM4.667 8V5.333H1.333V8h3.334ZM1.333 9.333h3.334V12H2c-.368 0-.667-.298-.667-.667V9.333ZM6 9.333h6v2c0 .369-.298.667-.667.667H6V9.333Z" fill="#3859FF" fillRule="evenodd" /></svg> },
+  slides: { label: "Slides assist", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="9" rx="1.5" stroke="#3859FF" strokeWidth="1.3"/><path d="M6 7v2l2-1-2-1z" fill="#3859FF"/></svg> },
+  diagram: { label: "Check diagram", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="8" r="2.5" stroke="#3859FF" strokeWidth="1.2"/><circle cx="12" cy="8" r="2.5" stroke="#3859FF" strokeWidth="1.2"/><line x1="6.5" y1="8" x2="9.5" y2="8" stroke="#3859FF" strokeWidth="1.2"/></svg> },
+  prototype: { label: "Test flow", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="4" y="2" width="8" height="12" rx="2" stroke="#3859FF" strokeWidth="1.2"/><line x1="7" y1="12" x2="9" y2="12" stroke="#3859FF" strokeWidth="1" strokeLinecap="round"/></svg> },
+  document: { label: "Doc assist", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L12 4.5V13a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="#3859FF" strokeWidth="1.2"/><line x1="5" y1="7" x2="10" y2="7" stroke="#3859FF" strokeWidth="1"/><line x1="5" y1="9.5" x2="9" y2="9.5" stroke="#3859FF" strokeWidth="1"/></svg> },
+  timeline: { label: "Timeline risks", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="2" y1="8" x2="14" y2="8" stroke="#3859FF" strokeWidth="1.2"/><circle cx="5" cy="8" r="1.5" fill="#3859FF"/><circle cx="8.5" cy="8" r="1.5" fill="#3859FF"/><circle cx="12" cy="8" r="1.5" fill="#3859FF"/></svg> },
+  talktrack: { label: "Transcript", icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="12" rx="3" stroke="#3859FF" strokeWidth="1.2"/><path d="M6.5 5.5v5l4-2.5-4-2.5z" fill="#3859FF"/></svg> },
+};
+
 /* ─── Input area ─── */
-function PanelInput({ onSend }: { onSend: (text: string) => void }) {
+function PanelInput({ onSend, formatContext }: { onSend: (text: string) => void; formatContext?: string | null }) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -1371,15 +1673,8 @@ function PanelInput({ onSend }: { onSend: (text: string) => void }) {
             <IconButton aria-label="Add" variant="ghost" size="medium"><IconPlus /></IconButton>
             <div style={{ width: 1, height: 32, background: "#e0e2e8", margin: "0 2px" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 4, height: 32, padding: "0 8px", cursor: "pointer" }}>
-              <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
-                <path
-                  clipRule="evenodd"
-                  d="M2 0C.895 0 0 .895 0 2v9.333C0 12.438.895 13.333 2 13.333h9.333c1.105 0 2-.895 2-2V2c0-1.105-.895-2-2-2H2Zm-.667 2c0-.368.299-.667.667-.667h9.333c.369 0 .667.299.667.667v2H1.333V2ZM6 5.333h6V8H6V5.333ZM4.667 8V5.333H1.333V8h3.334ZM1.333 9.333h3.334V12H2c-.368 0-.667-.298-.667-.667V9.333ZM6 9.333h6v2c0 .369-.298.667-.667.667H6V9.333Z"
-                  fill="#3859FF"
-                  fillRule="evenodd"
-                />
-              </svg>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#3859ff", lineHeight: 1 }}>Create table</span>
+              {FORMAT_CHIP[formatContext || 'table']?.icon}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#3859ff", lineHeight: 1 }}>{FORMAT_CHIP[formatContext || 'table']?.label || 'Create table'}</span>
               <IconCross size="small" color="icon-brand" />
             </div>
           </div>
@@ -1407,12 +1702,222 @@ function PanelInput({ onSend }: { onSend: (text: string) => void }) {
 }
 
 /* ─── Main export ─── */
-export default function AiPanelSolutionReview() {
+export default function AiPanelSolutionReview({ formatContext }: { formatContext?: string | null }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", maxWidth: "100%", background: "#fff", borderRadius: 8, overflow: "hidden" }}>
       <AiGradientDefs />
       <PanelHeader />
-      <PanelBody />
+      <PanelBody formatContext={formatContext} />
+    </div>
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+const _REMOVED: Record<string, {
+  greeting: string;
+  description: string;
+  visual: React.ReactNode;
+  pills: string[];
+}> = {
+  slides: {
+    greeting: "Hey there,",
+    description: "I see you have a presentation with 3 slides. I can help you draft **speaker notes**, create a **summary**, or suggest **better layouts** for your content.",
+    visual: (
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", padding: "16px 0" }}>
+        {[1, 2, 3].map(n => (
+          <div key={n} style={{ width: 96, height: 64, borderRadius: 8, background: `linear-gradient(135deg, ${n === 1 ? '#8B7FE8' : n === 2 ? '#9B8FEF' : '#A78BFA'}, #C4B5FD)`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <span style={{ color: "#fff", fontSize: 10, fontWeight: 600, fontFamily: "var(--font-noto)" }}>Slide {n}</span>
+          </div>
+        ))}
+      </div>
+    ),
+    pills: ["Draft speaker notes for each slide", "Create a summary of the deck"],
+  },
+  diagram: {
+    greeting: "Hey there,",
+    description: "Your diagram has a decision flow with multiple paths. I can **check for dead ends**, spot **missing connections**, or suggest **simplifications**.",
+    visual: (
+      <svg width="100%" height="80" viewBox="0 0 300 80" fill="none" style={{ padding: "8px 0" }}>
+        <rect x="10" y="25" width="50" height="28" rx="14" fill="#6C5CE7" />
+        <text x="35" y="43" fill="#fff" fontSize="10" textAnchor="middle" fontFamily="var(--font-noto)" fontWeight="600">Start</text>
+        <line x1="60" y1="39" x2="85" y2="39" stroke="#9CA3AF" strokeWidth="1.5" />
+        <rect x="85" y="22" width="65" height="34" rx="5" fill="#F3F0FF" stroke="#6C5CE7" strokeWidth="1.2" />
+        <text x="117" y="43" fill="#222" fontSize="9" textAnchor="middle" fontFamily="var(--font-noto)">Research</text>
+        <line x1="150" y1="39" x2="175" y2="39" stroke="#9CA3AF" strokeWidth="1.5" />
+        <rect x="182" y="28" width="22" height="22" rx="3" transform="rotate(45 193 39)" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.2" />
+        <text x="193" y="43" fill="#92400E" fontSize="10" textAnchor="middle" fontWeight="700">?</text>
+        <line x1="208" y1="39" x2="235" y2="39" stroke="#10B981" strokeWidth="1.5" />
+        <rect x="235" y="25" width="50" height="28" rx="14" fill="#10B981" />
+        <text x="260" y="43" fill="#fff" fontSize="10" textAnchor="middle" fontFamily="var(--font-noto)" fontWeight="600">Done</text>
+        <line x1="193" y1="55" x2="193" y2="70" stroke="#EF4444" strokeWidth="1.2" strokeDasharray="3 2" />
+        <circle cx="193" cy="74" r="5" fill="#FEF2F2" stroke="#EF4444" strokeWidth="1" />
+        <text x="193" y="77" fill="#EF4444" fontSize="8" textAnchor="middle" fontWeight="700">!</text>
+      </svg>
+    ),
+    pills: ["Spot missing paths or loops", "Simplify the flow"],
+  },
+  prototype: {
+    greeting: "Hey there,",
+    description: "Your prototype has 3 screens showing a user flow. I can **generate a test script**, create **edge case scenarios**, or suggest **UX improvements**.",
+    visual: (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "12px 0" }}>
+        {[{ color: "#6C5CE7", label: "Home" }, { color: "#3B82F6", label: "Cart" }, { color: "#10B981", label: "Pay" }].map((s, i) => (
+          <React.Fragment key={i}>
+            <div style={{ width: 64, height: 100, borderRadius: 12, border: `2px solid ${s.color}`, background: "#fff", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ height: 18, background: s.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ color: "#fff", fontSize: 8, fontWeight: 600, fontFamily: "var(--font-noto)" }}>{s.label}</span>
+              </div>
+              <div style={{ padding: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "80%" }} />
+                <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "60%" }} />
+                <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "70%" }} />
+              </div>
+            </div>
+            {i < 2 && <svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 8h8M10 5l3 3-3 3" stroke="#9CA3AF" strokeWidth="1.5" fill="none" /></svg>}
+          </React.Fragment>
+        ))}
+      </div>
+    ),
+    pills: ["Generate a test flow", "Suggest UX improvements"],
+  },
+  document: {
+    greeting: "Hey there,",
+    description: "Your doc has a detailed retrospective with multiple sections. I can add a **TL;DR summary**, generate **action items**, or help **restructure** the content.",
+    visual: (
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ border: "1.5px dashed #7C3AED", borderRadius: 6, padding: "8px 10px", background: "rgba(124, 58, 237, 0.04)" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", fontFamily: "var(--font-noto)" }}>TL;DR</span>
+          <div style={{ height: 3, borderRadius: 1, background: "#7C3AED", opacity: 0.2, width: "90%", marginTop: 4 }} />
+          <div style={{ height: 3, borderRadius: 1, background: "#7C3AED", opacity: 0.15, width: "70%", marginTop: 3 }} />
+        </div>
+        <div style={{ height: 8, borderRadius: 2, background: "#222428", width: "50%", marginTop: 4 }} />
+        <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "85%" }} />
+        <div style={{ height: 3, borderRadius: 1, background: "#E5E7EB", width: "75%" }} />
+      </div>
+    ),
+    pills: ["Add a summary / TL;DR", "Extract action items"],
+  },
+  timeline: {
+    greeting: "Hey there,",
+    description: "Your timeline has 9 tasks across September and October. I can **flag scheduling risks**, identify **bottlenecks**, or suggest **resource rebalancing**.",
+    visual: (
+      <div style={{ padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+        {[
+          { label: "Design", color: "#3859FF", start: "0%", w: "45%" },
+          { label: "Dev", color: "#1C8F00", start: "20%", w: "55%" },
+          { label: "QA", color: "#FFD02F", start: "50%", w: "35%" },
+        ].map((bar, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", height: 16 }}>
+            <span style={{ fontSize: 9, color: "#6f7489", fontFamily: "var(--font-noto)", width: 42, textAlign: "right", paddingRight: 6 }}>{bar.label}</span>
+            <div style={{ flex: 1, position: "relative", height: 12 }}>
+              <div style={{ position: "absolute", left: bar.start, width: bar.w, height: "100%", borderRadius: 4, background: bar.color, opacity: 0.2 }} />
+              <div style={{ position: "absolute", left: bar.start, width: bar.w, height: "100%", borderRadius: 4, border: `1.5px solid ${bar.color}50` }} />
+            </div>
+          </div>
+        ))}
+        <div style={{ position: "relative", marginLeft: 42 }}>
+          <div style={{ position: "absolute", left: "48%", top: -52, width: 24, height: 24, borderRadius: "50%", border: "2px solid #EF4444", background: "rgba(239,68,68,0.06)" }} />
+        </div>
+      </div>
+    ),
+    pills: ["Flag risks in your plan", "Suggest resource rebalancing"],
+  },
+  talktrack: {
+    greeting: "Hey there,",
+    description: "Your talktrack has a recorded session. I can **generate a transcript**, extract **key decisions**, or create **follow-up action items**.",
+    visual: (
+      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 3, justifyContent: "center", height: 32 }}>
+          <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#4ECDC4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M8 5.5v13l11-6.5L8 5.5z" fill="#fff"/></svg>
+          </div>
+          {[8, 14, 6, 16, 10, 18, 8, 12, 6, 14, 10, 16, 8, 12, 18, 10, 6, 14].map((h, i) => (
+            <div key={i} style={{ width: 3, height: h, borderRadius: 1, background: "#4ECDC4", opacity: 0.3 + (i % 3) * 0.2 }} />
+          ))}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+            <span style={{ fontSize: 9, color: "#9CA3AF", fontFamily: "var(--font-noto)" }}>0:12</span>
+            <div style={{ height: 3, borderRadius: 1, background: "#222428", opacity: 0.12, flex: 1 }} />
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+            <span style={{ fontSize: 9, color: "#9CA3AF", fontFamily: "var(--font-noto)" }}>0:24</span>
+            <div style={{ height: 3, borderRadius: 1, background: "#222428", opacity: 0.08, flex: 1 }} />
+          </div>
+        </div>
+      </div>
+    ),
+    pills: ["Generate a transcript", "Extract key decisions"],
+  },
+};
+
+function FormatPanel({ formatType }: { formatType: string }) {
+  const content = FORMAT_PANEL_CONTENT[formatType];
+  if (!content) return null;
+
+  const parseBold = (text: string) => {
+    return text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i} style={{ fontWeight: 700, color: "#222428" }}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px" }}>
+      {/* Sparkle avatar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          background: "linear-gradient(135deg, #7C3AED, #3859FF)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(124, 58, 237, 0.25)",
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2c.3 2.7 1.8 5.1 4.2 6.3C18.6 9.5 21 11 21.8 12c-.8 1-3.2 2.5-5.6 3.7C13.8 16.9 12.3 19.3 12 22c-.3-2.7-1.8-5.1-4.2-6.3C5.4 14.5 3 13 2.2 12c.8-1 3.2-2.5 5.6-3.7C10.2 7.1 11.7 4.7 12 2z" fill="#fff"/>
+          </svg>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3" stroke="#9CA3AF" strokeWidth="1.5" fill="none" strokeLinecap="round" /></svg>
+      </div>
+
+      {/* Greeting */}
+      <h2 style={{ fontSize: 22, fontWeight: 600, color: "#222428", fontFamily: "var(--font-noto)", marginBottom: 12, lineHeight: 1.3 }}>
+        {content.greeting}
+      </h2>
+
+      {/* Description */}
+      <p style={{ fontSize: 14, color: "#6f7489", fontFamily: "var(--font-noto)", lineHeight: 1.6, marginBottom: 20 }}>
+        {parseBold(content.description)}
+      </p>
+
+      {/* Visual */}
+      <div style={{ background: "#F7F7F8", borderRadius: 8, marginBottom: 24, overflow: "hidden" }}>
+        {content.visual}
+      </div>
+
+      {/* Action pills */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {content.pills.map((pill, i) => (
+          <button
+            key={i}
+            style={{
+              display: "flex", alignItems: "center",
+              padding: "10px 16px",
+              background: "#fff",
+              border: "1px solid #E9EAEF",
+              borderRadius: 20,
+              fontSize: 13, fontWeight: 500, color: "#222428",
+              fontFamily: "var(--font-noto)",
+              cursor: "pointer",
+              textAlign: "left",
+              lineHeight: 1.4,
+            }}
+          >
+            {pill}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

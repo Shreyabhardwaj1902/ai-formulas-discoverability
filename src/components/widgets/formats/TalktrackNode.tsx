@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { PrototypeFormat } from "./PrototypeFormat";
+import { TalktrackFormat } from "./TalktrackFormat";
 import { styled } from "../../../lib/stitches.config";
 
 const NodeWrapper = styled("div", {
@@ -8,10 +8,10 @@ const NodeWrapper = styled("div", {
   height: "100%",
 });
 
-export const PrototypeNode = memo(({ selected, data, id }: NodeProps) => {
+export const TalktrackNode = memo(({ selected, data, id }: NodeProps) => {
   return (
     <NodeWrapper>
-      <PrototypeFormat selected={selected} data={data} id={id} />
+      <TalktrackFormat selected={selected} data={data} id={id} />
     </NodeWrapper>
   );
 });

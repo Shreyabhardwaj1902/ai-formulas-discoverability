@@ -8,6 +8,8 @@ export { TableNode } from "./formats/TableNode";
 export { DiagramNode } from "./formats/DiagramNode";
 export { PrototypeNode } from "./formats/PrototypeNode";
 export { SlidesNode } from "./formats/SlidesNode";
+export { TimelineNode } from "./formats/TimelineNode";
+export { TalktrackNode } from "./formats/TalktrackNode";
 
 export type { BaseWidgetData } from "./BaseWidget";
 export type { StickyNoteData } from "./StickyNoteWidget";

@@ -21,11 +21,14 @@ export default function App() {
   const [zoom, setZoom] = useState(100);
   const [showGrid, setShowGrid] = useState(true);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiPanelFormat, setAiPanelFormat] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const flowRef = useRef<ReactFlowInstance | null>(null);
 
-  // Called from TableFormat when Formula is clicked
-  (window as any).__openAiPanel = () => setShowAiPanel(true);
-  (window as any).__closeAiPanel = () => setShowAiPanel(false);
+  // Called from TableFormat when Formula is clicked (no format = table default)
+  (window as any).__openAiPanel = (format?: string) => { setAiPanelFormat(format || null); setShowAiPanel(true); };
+  (window as any).__closeAiPanel = () => { setShowAiPanel(false); setAiPanelFormat(null); setAiGenerating(false); };
+  (window as any).__setAiGenerating = (val: boolean) => setAiGenerating(val);
 
   const handleFlowMount = useCallback((instance: ReactFlowInstance) => {
     flowRef.current = instance;
@@ -95,6 +98,34 @@ export default function App() {
         onToggleGrid={handleToggleGrid}
         showGrid={showGrid}
       />
+      {/* AI Generating Overlay */}
+      {aiGenerating && (
+        <div style={{
+          position: "absolute", top: 64, left: "50%", transform: "translateX(-50%)",
+          display: "flex", alignItems: "center", gap: 10,
+          background: "#fff", borderRadius: 8, padding: "6px 8px 6px 14px",
+          boxShadow: "0 2px 12px rgba(34,36,40,0.12), 0 0 0 0.5px rgba(0,0,0,0.05)",
+          zIndex: 60,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "#222428", fontFamily: "var(--font-noto)" }}>Generating.</span>
+          <button
+            onClick={() => { setAiGenerating(false); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 4,
+              background: "#fff", border: "1px solid #FECACA", borderRadius: 6,
+              padding: "4px 10px", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, color: "#DC2626", fontFamily: "var(--font-noto)",
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="#DC2626" strokeWidth="1.5"/>
+              <rect x="6" y="6" width="4" height="4" rx="0.5" fill="#DC2626"/>
+            </svg>
+            Stop
+          </button>
+        </div>
+      )}
+
       {/* AI Sidekick Panel */}
       {showAiPanel && (
         <div
@@ -119,7 +150,7 @@ export default function App() {
             zIndex: 50,
           }}
         >
-          <AiPanelSolutionReview />
+          <AiPanelSolutionReview formatContext={aiPanelFormat} />
         </div>
       )}
     </AppContainer>

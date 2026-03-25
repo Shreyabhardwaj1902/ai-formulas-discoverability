@@ -1,69 +1,58 @@
-import React from "react";
+import React, { useState } from "react";
 import { BaseFormatWidget } from "./BaseFormatWidget";
 import { SlidesMenuIcon } from "./FormatIcons";
-import { diagramSvgPaths } from "./svg-paths-diagrams";
+import { NudgeCard, MiniSlidesPreview } from "./NudgeCard";
 
-// --- Internal Icons ---
+export function SlidesFormat({ selected, data, id }: { selected?: boolean; data?: any; id?: string }) {
+  const [showNudge, setShowNudge] = useState(!!data?.showNudge);
 
-const IconSparks = () => (
-  <svg className="size-6" viewBox="0 0 24 24" fill="none">
-    <path d={diagramSvgPaths.p72aff80} fill="#E53935" />
-  </svg>
-);
-
-const IconAddSlides = () => (
-   <svg className="size-6" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="4" width="18" height="14" rx="2" stroke="#E53935" strokeWidth="2" />
-      <path d="M12 9v4M10 11h4" stroke="#E53935" strokeWidth="2" strokeLinecap="round" />
-   </svg>
-);
-
-const IconLayout = () => (
-  <svg className="size-6" viewBox="0 0 24 24" fill="none">
-     <path d={diagramSvgPaths.p269a700} stroke="#E53935" strokeWidth="2" />
-     <path d="M3 9L21 9" stroke="#E53935" strokeWidth="2" />
-     <path d={diagramSvgPaths.p154fac80} stroke="#E53935" strokeWidth="2" />
-  </svg>
-);
-
-// --- Component ---
-
-export function SlidesFormat({ selected, id }: { selected?: boolean; id?: string }) {
   return (
+    <>
     <BaseFormatWidget
        icon={<SlidesMenuIcon />}
        title="Slides"
+       formatType="slides"
        selected={selected}
        id={id}
        className="w-[802px] h-[451px]"
     >
-       <div className="w-[802px] h-[451px] bg-[var(--background)] rounded-[var(--radius-lg)] border border-[var(--border)] flex flex-col items-center justify-center relative overflow-hidden">
-          {/* Dashed Border Inner */}
-          <div className="absolute inset-4 border border-[var(--border)] border-dashed rounded-[var(--radius-lg)] pointer-events-none" />
-          
-          {/* Content */}
-          <div className="flex flex-col items-center gap-8 z-10 pointer-events-auto">
-             <h3 className="font-[family-name:var(--font-noto)] font-semibold text-[14px] text-[var(--muted-foreground)]">
-               Start your presentation: add slides or
-             </h3>
-             <div className="flex gap-2">
-                {[
-                  { icon: <IconSparks />, label: "Create with AI" },
-                  { icon: <IconAddSlides />, label: "Add slides" },
-                  { icon: <IconLayout />, label: "Start with a template" }
-                ].map((item, index) => (
-                  <div key={index} className="group flex flex-col items-center justify-center gap-4 w-[198px] py-8 px-4 bg-[var(--background)] rounded-[var(--radius-lg)] border border-[var(--border)] cursor-pointer">
-                     <div className="group-hover:scale-110 transition-transform duration-200">
-                       {item.icon}
-                     </div>
-                     <span className="font-[family-name:var(--font-noto)] font-semibold text-[14px] text-[var(--foreground)] text-center leading-none">
-                       {item.label}
-                     </span>
-                  </div>
-                ))}
-             </div>
-          </div>
+       <div className="w-[802px] h-[451px] bg-[var(--background)] rounded-[var(--radius-lg)] border border-[var(--border)] flex items-center justify-center relative overflow-hidden px-6 gap-4">
+          {[
+            { num: 1, title: "Brainstorm\nSession", gradient: "linear-gradient(135deg, #8B7FE8 0%, #A78BFA 40%, #C4B5FD 70%, #9F8FEF 100%)" },
+            { num: 2, title: "Brainstorm\nSession", gradient: "linear-gradient(135deg, #9B8FEF 0%, #B49AFA 40%, #A78BFA 70%, #8B7FE8 100%)" },
+            { num: 3, title: "Brainstorm\nSession", gradient: "linear-gradient(135deg, #A78BFA 0%, #8B7FE8 40%, #B49AFA 70%, #9F8FEF 100%)" },
+          ].map((slide) => (
+            <div key={slide.num} className="flex flex-col gap-1 shrink-0">
+              <span style={{ fontSize: 10, color: "#9CA3AF", fontFamily: "var(--font-noto)" }}>{slide.num}</span>
+              <div
+                style={{
+                  width: 240, height: 160, borderRadius: 12,
+                  background: slide.gradient,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  position: "relative", overflow: "hidden",
+                }}
+              >
+                <div style={{ position: "absolute", width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.12)", filter: "blur(30px)", top: -20, left: -10 }} />
+                <div style={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", background: "rgba(139,127,232,0.3)", filter: "blur(25px)", bottom: -10, right: 20 }} />
+                <span style={{ color: "#fff", fontSize: 24, fontWeight: 700, textAlign: "center", lineHeight: 1.2, fontFamily: "var(--font-noto)", whiteSpace: "pre-line", zIndex: 1 }}>
+                  {slide.title}
+                </span>
+              </div>
+            </div>
+          ))}
        </div>
     </BaseFormatWidget>
+      <NudgeCard
+        show={showNudge}
+        onDismiss={() => setShowNudge(false)}
+        formatType="slides"
+        content={{
+          preview: <MiniSlidesPreview />,
+          title: "Draft speaker notes?",
+          description: "Your slides have content but no speaker notes — I can draft talking points for each slide.",
+          ctaLabel: "Draft notes",
+        }}
+      />
+    </>
   );
 }

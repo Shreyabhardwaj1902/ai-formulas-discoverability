@@ -11,7 +11,7 @@ const NodeWrapper = styled("div", {
 export const DiagramNode = memo(({ selected, data, id }: NodeProps) => {
   return (
     <NodeWrapper>
-      <DiagramFormat selected={selected} id={id} />
+      <DiagramFormat selected={selected} data={data} id={id} />
     </NodeWrapper>
   );
 });

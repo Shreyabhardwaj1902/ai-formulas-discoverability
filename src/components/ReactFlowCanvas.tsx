@@ -27,7 +27,9 @@ import {
   TableNode,
   DiagramNode,
   PrototypeNode,
-  SlidesNode
+  SlidesNode,
+  TimelineNode,
+  TalktrackNode
 } from "./widgets";
 
 const CanvasWrapper = styled("div", {
@@ -71,7 +73,7 @@ const CanvasWrapper = styled("div", {
   },
   
   // Remove default styling for custom format widgets so they control their own look
-  "& .react-flow__node-document, & .react-flow__node-table, & .react-flow__node-diagram, & .react-flow__node-prototype, & .react-flow__node-slides": {
+  "& .react-flow__node-document, & .react-flow__node-table, & .react-flow__node-diagram, & .react-flow__node-prototype, & .react-flow__node-slides, & .react-flow__node-timeline, & .react-flow__node-talktrack": {
     backgroundColor: "transparent !important",
     border: "none !important",
     padding: "0 !important",
@@ -160,6 +162,12 @@ const getCursorForTool = (tool: string | null) => {
     case 'slides':
       svg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1" stroke="#000" stroke-width="1" fill="none"/><path d="M12 12v3" stroke="#000"/><path d="M9 12h6" stroke="#000"/></svg>`;
       break;
+    case 'timeline':
+      svg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12h20M6 8v8M12 6v12M18 8v8" stroke="#000" stroke-width="1" stroke-linecap="round"/></svg>`;
+      break;
+    case 'talktrack':
+      svg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16v11H9l-5 5V4z" stroke="#000" stroke-width="1" stroke-linejoin="round" fill="#fff"/><path d="M8 9h8M8 12.5h4" stroke="#000" stroke-width="1" stroke-linecap="round"/></svg>`;
+      break;
     default:
       return 'crosshair';
   }
@@ -179,9 +187,11 @@ const DEFAULT_WIDGET_SIZES: Record<string, { width: number; height: number }> = 
   frame: { width: 400, height: 300 },
   document: { width: 500, height: 600 }, 
   table: { width: 800, height: 400 },
-  diagram: { width: 802, height: 451 },
-  prototype: { width: 802, height: 451 },
+  diagram: { width: 1215, height: 693 },
+  prototype: { width: 865, height: 560 },
   slides: { width: 802, height: 451 },
+  timeline: { width: 1145, height: 637 },
+  talktrack: { width: 807, height: 482 },
 };
 
 function ReactFlowCanvasInner({ onFlowMount, onViewportChange, showGrid = true, activeTool, onToolReset }: ReactFlowCanvasProps) {
@@ -206,6 +216,8 @@ function ReactFlowCanvasInner({ onFlowMount, onViewportChange, showGrid = true, 
       diagram: DiagramNode,
       prototype: PrototypeNode,
       slides: SlidesNode,
+      timeline: TimelineNode,
+      talktrack: TalktrackNode,
     }),
     []
   );
@@ -478,7 +490,7 @@ function ReactFlowCanvasInner({ onFlowMount, onViewportChange, showGrid = true, 
         id: `${activeTool}-${Date.now()}`,
         type: activeTool,
         position,
-        data: { isEditing: false },
+        data: { isEditing: false, ...(['table', 'slides', 'diagram', 'prototype', 'document', 'timeline', 'talktrack'].includes(activeTool) ? { showNudge: true } : {}) },
         style: {
           width: size.width,
           height: size.height,
@@ -486,6 +498,11 @@ function ReactFlowCanvasInner({ onFlowMount, onViewportChange, showGrid = true, 
       };
 
       setNodes((nds) => [...nds, newNode]);
+
+      // Fallback: trigger nudge via window function after table mounts
+      if (activeTool === 'table') {
+        setTimeout(() => (window as any).__showFormulaNudge?.(), 600);
+      }
 
       if (onToolReset) {
         onToolReset();

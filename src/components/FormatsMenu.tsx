@@ -172,6 +172,16 @@ export function FormatsMenu({ onSelect }: FormatsMenuProps) {
           </DropdownMenuIconSlot>
           Slides
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleSelect("talktrack")}>
+          <DropdownMenuIconSlot>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="2" width="14" height="12" rx="3" fill="#4ECDC4" opacity="0.2"/>
+              <rect x="1" y="2" width="14" height="12" rx="3" stroke="#4ECDC4" strokeWidth="1.2"/>
+              <path d="M6.5 5.5v5l4-2.5-4-2.5z" fill="#4ECDC4"/>
+            </svg>
+          </DropdownMenuIconSlot>
+          Talktrack
+        </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         

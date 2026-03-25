@@ -11,7 +11,7 @@ const NodeWrapper = styled("div", {
 export const SlidesNode = memo(({ selected, data, id }: NodeProps) => {
   return (
     <NodeWrapper>
-      <SlidesFormat selected={selected} id={id} />
+      <SlidesFormat selected={selected} data={data} id={id} />
     </NodeWrapper>
   );
 });

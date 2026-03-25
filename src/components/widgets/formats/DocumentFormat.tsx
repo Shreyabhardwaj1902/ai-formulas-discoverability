@@ -3,6 +3,7 @@ import { BaseFormatWidget } from "./BaseFormatWidget";
 import { DocumentMenuIcon } from "./FormatIcons";
 import { cn } from "../../ui/utils";
 import { NodeToolbar, Position } from "reactflow";
+import { NudgeCard, MiniDocPreview } from "./NudgeCard";
 import { 
   Bold, 
   Italic, 
@@ -348,8 +349,10 @@ function FormattingToolbar() {
 
 export function DocumentFormat({ selected, data, id }: { selected?: boolean; data?: any; id?: string }) {
   // State for content (lines)
-  const [content, setContent] = useState(data?.content || `# ${DEFAULT_TITLE}\n${DEFAULT_SUBTITLE}`);
+  const DEFAULT_DOC_CONTENT = `# Discussion summary:\na brief summary of the main items discussed during the retrospective.\n\n## What Went Well:\nhighlights of what the team did well during the past week.\n\n## What Needs Improvement:\nareas where the team can improve.\n\n## Ideas for Improvement:\nsuggestions and ideas for what we can do differently moving forward.\n\n## Outcomes:\nthe key outcomes and decisions made during the meeting.\n\n## Action Items:\na list of action items, including who is responsible for each task and the deadlines.\n\n/embeds`;
+  const [content, setContent] = useState(data?.content || DEFAULT_DOC_CONTENT);
   const [activeLineIndex, setActiveLineIndex] = useState<number | null>(null);
+  const [showNudge, setShowNudge] = useState(!!data?.showNudge);
 
   // Specs from Figma
   // Using standard A4-like width to prevent "very big width" issues
@@ -437,12 +440,14 @@ export function DocumentFormat({ selected, data, id }: { selected?: boolean; dat
     }
   }, [data?.content]);
 
-  const isPlaceholder = content.trim() === `# ${DEFAULT_TITLE}\n${DEFAULT_SUBTITLE}` || content.trim() === `# ${DEFAULT_TITLE}`;
+  const isPlaceholder = content.trim() === `# ${DEFAULT_TITLE}\n${DEFAULT_SUBTITLE}` || content.trim() === `# ${DEFAULT_TITLE}` || content.trim() === '';
 
   return (
-    <BaseFormatWidget 
-      icon={<DocumentMenuIcon />} 
-      title="Document" 
+    <>
+    <BaseFormatWidget
+      icon={<DocumentMenuIcon />}
+      title="Document"
+      formatType="document"
       selected={selected}
       id={id}
       className={`w-[${WIDTH}px]`}
@@ -505,5 +510,17 @@ export function DocumentFormat({ selected, data, id }: { selected?: boolean; dat
         </div>
       </div>
     </BaseFormatWidget>
+      <NudgeCard
+        show={showNudge}
+        onDismiss={() => setShowNudge(false)}
+        formatType="document"
+        content={{
+          preview: <MiniDocPreview />,
+          title: "Add a summary/TL;DR?",
+          description: "Your doc has detailed sections — I can add a TL;DR at the top so readers get the key points fast.",
+          ctaLabel: "Add summary",
+        }}
+      />
+    </>
   );
 }

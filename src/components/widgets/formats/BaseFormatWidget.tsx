@@ -6,6 +6,7 @@ import { NodeResizer, useViewport, NodeResizeControl, ControlPosition, useReactF
 interface BaseFormatWidgetProps {
   icon: React.ReactNode;
   title: string;
+  formatType?: string;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
@@ -16,6 +17,7 @@ interface BaseFormatWidgetProps {
 export function BaseFormatWidget({
   icon,
   title,
+  formatType,
   children,
   className,
   style,
@@ -138,7 +140,7 @@ export function BaseFormatWidget({
           width: 'max-content'
         }}
       >
-        <FormatPill icon={icon} title={title} />
+        <FormatPill icon={icon} title={title} formatType={formatType} />
       </div>
       
       {/* Content Container with Scaling */}

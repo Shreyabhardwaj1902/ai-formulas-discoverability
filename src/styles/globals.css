@@ -273,6 +273,9 @@ html {
   fill: url(#ai-sparkle-gradient) !important;
 }
 
+/* Generating dots pulse */
+@keyframes n-pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
 /* Fade in for panel content */
 @keyframes fadeSlideIn {
   from { opacity: 0; }

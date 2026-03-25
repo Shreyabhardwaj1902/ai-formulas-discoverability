@@ -106,6 +106,27 @@ const DEFAULT_ROWS: Row[] = [
   { id: 'r7', c1: 'Developing more effici...', c2: 'Zak Brown', c3: 'Handling balance', c4: 30, c5: 2, c6: 0.8, c7: 6, c8: 22, c9: 7 },
 ];
 
+/* ─── Table Formula Presets ─── */
+const TABLE_PRESETS: Record<string, {
+  title: string;
+  columns: Column[];
+  rows: Row[];
+  nudge: { title: string; description: string; miniHeaders: string[]; miniColorKeys: string[]; miniRows: string[][] };
+}> = {
+  prioritisation: {
+    title: "H1 Team Priorities",
+    columns: DEFAULT_COLUMNS,
+    rows: DEFAULT_ROWS,
+    nudge: {
+      title: "Prioritise with a formula?",
+      description: "Your table has fields like Reach and Impact that work well together — I can turn them into a score.",
+      miniHeaders: ["Reach", "Impact", "Conf.", "Effort", "Likes"],
+      miniColorKeys: ["Reach", "Impact", "Confidence", "Effort", "Likes"],
+      miniRows: [["200", "2.5", "0.75", "4", "34"], ["150", "2", "0.5", "20", "12"]],
+    },
+  },
+};
+
 const FIELD_TYPES: { label: string; type: ColumnType; miroIcon: React.ComponentType<any>; group: 'Custom' | 'Formula' }[] = [
   { label: 'Text', type: 'text', miroIcon: IconTextLinesThree, group: 'Custom' },
   { label: 'Date', type: 'date', miroIcon: IconCalendarBlank, group: 'Custom' },
@@ -325,12 +346,29 @@ const CellContent = ({
 };
 
 export function TableFormat({ selected, data, id }: { selected?: boolean; data?: any; id?: string }) {
-  const [columns, setColumns] = useState<Column[]>(data?.columns || DEFAULT_COLUMNS);
-  const [rows, setRows] = useState<Row[]>(data?.rows || DEFAULT_ROWS);
+  const preset = data?.preset ? TABLE_PRESETS[data.preset] : null;
+  const [columns, setColumns] = useState<Column[]>(preset?.columns || data?.columns || DEFAULT_COLUMNS);
+  const [rows, setRows] = useState<Row[]>(preset?.rows || data?.rows || DEFAULT_ROWS);
   const [editingCell, setEditingCell] = useState<{ rowId: string; colId: string } | null>(null);
   const [formulaPopover, setFormulaPopover] = useState<{ x: number; y: number; colLabel: string } | null>(null);
+  // Formula nudge popup
+  const [showNudge, setShowNudge] = useState(!!data?.showNudge);
+  const [nudgePos, setNudgePos] = useState<{ top: number; left: number } | null>(null);
+  const nudgeAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Sync with parent data if needed (omitted for pure local state demo, but in real app we'd use useEffect to update node data)
+  // Track nudge anchor position
+  useEffect(() => {
+    if (!showNudge || !nudgeAnchorRef.current) { setNudgePos(null); return; }
+    const update = () => {
+      if (nudgeAnchorRef.current) {
+        const rect = nudgeAnchorRef.current.getBoundingClientRect();
+        setNudgePos({ top: rect.top, left: rect.right });
+      }
+    };
+    update();
+    const id = setInterval(update, 100);
+    return () => clearInterval(id);
+  }, [showNudge]);
 
   const handleAddRow = () => {
     const newRow: Row = {
@@ -467,10 +505,16 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
       previewColIdRef.current = null;
     };
 
+    // Show formula nudge attached to this table
+    (window as any).__showFormulaNudge = () => {
+      setShowNudge(true);
+    };
+
     return () => {
       delete (window as any).__previewFormula;
       delete (window as any).__confirmFormula;
       delete (window as any).__removePreviewFormula;
+      delete (window as any).__showFormulaNudge;
     };
   }, [columns, rows]);
 
@@ -494,9 +538,11 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
   };
 
   return (
+    <>
     <BaseFormatWidget
       icon={<TableMenuIcon />}
       title="H1 Team Priorities"
+      formatType="table"
       selected={selected}
       id={id}
       className="w-auto h-auto inline-block"
@@ -756,5 +802,91 @@ export function TableFormat({ selected, data, id }: { selected?: boolean; data?:
         document.body
       )}
     </BaseFormatWidget>
+
+      {/* Nudge anchor — invisible element to track position */}
+      {showNudge && <div ref={nudgeAnchorRef} style={{ position: "absolute", top: 0, left: "100%", width: 0, height: 0 }} />}
+
+      {/* Formula Nudge — portaled to body */}
+      {showNudge && nudgePos && createPortal(
+        <div
+          style={{
+            position: "fixed",
+            top: nudgePos.top,
+            left: nudgePos.left + 12,
+            background: "#fff",
+            borderRadius: 4,
+            boxShadow: "0 8px 32px rgba(34, 36, 40, 0.14), 0 0 0 0.5px rgba(0,0,0,0.05)",
+            width: 220,
+            maxHeight: 300,
+            overflow: "hidden",
+            zIndex: 9999,
+            animation: "fadeSlideIn 400ms ease-out both",
+            padding: "8px 8px 0 8px",
+          }}
+        >
+          {(() => {
+            const nudgeData = preset?.nudge || TABLE_PRESETS.prioritisation.nudge;
+            return (
+              <>
+                <div style={{ background: "#F7F7F8", borderRadius: 4, padding: "8px 6px" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 8, fontFamily: "var(--font-noto)", tableLayout: "fixed" }}>
+                    <thead>
+                      <tr>
+                        {nudgeData.miniHeaders.map((h, i) => (
+                          <th key={i} style={{
+                            fontWeight: 600, color: "#7C3AED",
+                            padding: "3px 2px", textAlign: "center",
+                            background: "rgba(124, 58, 237, 0.08)",
+                            borderBottom: "1px solid #E9EAEF",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>{h}</th>
+                        ))}
+                        <th style={{ fontWeight: 600, color: "#AEB2C0", padding: "3px 2px", textAlign: "center", borderBottom: "1px solid #E9EAEF", width: 16 }}>=</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {nudgeData.miniRows.map((row, ri) => (
+                        <tr key={ri}>
+                          {row.map((cell, ci) => (
+                            <td key={ci} style={{
+                              padding: "3px 2px", textAlign: "center", color: "#222428", fontSize: 8,
+                              background: "rgba(124, 58, 237, 0.04)",
+                            }}>{cell}</td>
+                          ))}
+                          <td style={{ padding: "3px 2px", textAlign: "center", color: "#9CA3AF", fontWeight: 600, fontSize: 8, width: 16 }}>?</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ padding: "10px 4px 12px" }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#222428", lineHeight: 1.3, marginBottom: 3 }}>
+                    {nudgeData.title}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 400, color: "#6f7489", lineHeight: 1.4, marginBottom: 10 }}>
+                    {nudgeData.description}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowNudge(false); (window as any).__openAiPanel?.(); }}
+                      style={{ background: "#3859FF", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", lineHeight: 1.3, whiteSpace: "nowrap" }}
+                    >
+                      Create formula
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowNudge(false); }}
+                      style={{ background: "transparent", color: "#222428", border: "none", padding: "5px 8px", fontSize: 11, fontWeight: 500, cursor: "pointer", lineHeight: 1.3, whiteSpace: "nowrap" }}
+                    >
+                      No, thanks
+                    </button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

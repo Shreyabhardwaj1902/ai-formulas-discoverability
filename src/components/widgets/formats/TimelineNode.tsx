@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { PrototypeFormat } from "./PrototypeFormat";
+import { TimelineFormat } from "./TimelineFormat";
 import { styled } from "../../../lib/stitches.config";
 
 const NodeWrapper = styled("div", {
@@ -8,10 +8,10 @@ const NodeWrapper = styled("div", {
   height: "100%",
 });
 
-export const PrototypeNode = memo(({ selected, data, id }: NodeProps) => {
+export const TimelineNode = memo(({ selected, data, id }: NodeProps) => {
   return (
     <NodeWrapper>
-      <PrototypeFormat selected={selected} data={data} id={id} />
+      <TimelineFormat selected={selected} data={data} id={id} />
     </NodeWrapper>
   );
 });
